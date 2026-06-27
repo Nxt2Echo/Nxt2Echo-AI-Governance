@@ -7,7 +7,12 @@ const ai = new GoogleGenAI({
 
 export const chatWithGemini = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { prompt } = req.body;
+    const prompt = req.body.prompt || req.query.prompt;
+
+    if (!prompt) {
+      res.status(400).json({ success: false, message: "Prompt is required in body or query" });
+      return;
+    }
 
     console.log("Calling Gemini API...");
 
