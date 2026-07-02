@@ -1,5 +1,6 @@
-import { complaints } from "@/data/mockData";
+import { useDashboard } from "@/hooks/useDashboard";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileText, ArrowRight } from "lucide-react";
@@ -20,7 +21,7 @@ const priorityVariant = {
 };
 
 export default function RecentComplaints() {
-  const recent = complaints.slice(0, 8);
+  const { recentComplaints, loading, error } = useDashboard();
 
   return (
     <Card className="border-border">
@@ -39,45 +40,60 @@ export default function RecentComplaints() {
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="w-24">ID</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead className="hidden lg:table-cell">Area</TableHead>
-              <TableHead className="hidden md:table-cell">Department</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="hidden sm:table-cell">Priority</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {recent.map((c) => (
-              <TableRow key={c.id}>
-                <TableCell className="font-mono text-xs text-muted-foreground">{c.id}</TableCell>
-                <TableCell>
-                  <div>
-                    <p className="text-xs font-medium text-foreground truncate max-w-[160px]">{c.title}</p>
-                    <p className="text-[10px] text-muted-foreground">{c.category}</p>
-                  </div>
-                </TableCell>
-                <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">{c.area}</TableCell>
-                <TableCell className="hidden md:table-cell">
-                  <Badge variant="outline" className="text-[10px]">{c.department}</Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={statusVariant[c.status] ?? "outline"} className="text-[10px]">
-                    {c.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="hidden sm:table-cell">
-                  <Badge variant={priorityVariant[c.priority] ?? "outline"} className="text-[10px]">
-                    {c.priority}
-                  </Badge>
-                </TableCell>
-              </TableRow>
+        {loading ? (
+          <div className="p-4 space-y-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton className="h-3 w-16 shrink-0" />
+                <Skeleton className="h-3 flex-1" />
+                <Skeleton className="h-5 w-16" />
+                <Skeleton className="h-5 w-12" />
+              </div>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+        ) : error ? (
+          <div className="p-4 text-xs text-muted-foreground">⚠ Could not load recent complaints</div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-24">ID</TableHead>
+                <TableHead>Title</TableHead>
+                <TableHead className="hidden lg:table-cell">Area</TableHead>
+                <TableHead className="hidden md:table-cell">Department</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="hidden sm:table-cell">Priority</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {recentComplaints.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-mono text-xs text-muted-foreground">{c.id}</TableCell>
+                  <TableCell>
+                    <div>
+                      <p className="text-xs font-medium text-foreground truncate max-w-[160px]">{c.title}</p>
+                      <p className="text-[10px] text-muted-foreground">{c.category}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">{c.area}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <Badge variant="outline" className="text-[10px]">{c.department}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={statusVariant[c.status] ?? "outline"} className="text-[10px]">
+                      {c.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    <Badge variant={priorityVariant[c.priority] ?? "outline"} className="text-[10px]">
+                      {c.priority}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </CardContent>
     </Card>
   );

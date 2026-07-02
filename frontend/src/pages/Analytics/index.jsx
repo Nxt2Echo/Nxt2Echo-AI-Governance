@@ -1,8 +1,9 @@
 import DashboardLayout from "@/layouts/DashboardLayout";
-import { aiInsights, complaints, categoryData } from "@/data/mockData";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Brain, Copy, AlertTriangle, TrendingUp, Network, CheckCircle2,
@@ -13,14 +14,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from "recharts";
 
-const sentimentData = complaints.slice(0, 8).map((c) => ({
-  id: c.id,
-  title: c.title.slice(0, 30) + "…",
-  sentiment: c.sentiment,
-  score: c.aiScore,
-  risk: c.risk,
-}));
-
+// ── Static data (not from mockData — these are model config / UI constants) ──
 const radarData = [
   { subject: "Accuracy", A: 94 },
   { subject: "Speed", A: 88 },
@@ -37,8 +31,22 @@ const duplicateClusters = [
   { group: "Cluster D — Street lights Jayanagar", count: 9, merged: 8, similarity: 89 },
   { group: "Cluster E — Sewage HSR Layout", count: 8, merged: 7, similarity: 93 },
 ];
+// ────────────────────────────────────────────────────────────────────────────
 
-const sentimentIcon = { Angry: Frown, Frustrated: Frown, Outraged: Frown, Alarmed: AlertTriangle, Concerned: Meh, Annoyed: Meh, Disappointed: Meh, Fearful: AlertTriangle };
+const typeConfig = {
+  Pattern: { icon: TrendingUp, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+  Duplicate: { icon: Copy, color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20" },
+  Risk: { icon: AlertTriangle, color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20" },
+  Efficiency: { icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+  Cluster: { icon: Network, color: "text-cyan-400", bg: "bg-cyan-500/10", border: "border-cyan-500/20" },
+};
+
+const priorityVariant = { Critical: "critical", High: "high", Medium: "medium", Low: "low" };
+
+const sentimentIcon = {
+  Angry: Frown, Frustrated: Frown, Outraged: Frown, Alarmed: AlertTriangle,
+  Concerned: Meh, Annoyed: Meh, Disappointed: Meh, Fearful: AlertTriangle,
+};
 const sentimentColor = {
   Angry: "text-red-400", Frustrated: "text-orange-400", Outraged: "text-red-500",
   Alarmed: "text-red-400", Concerned: "text-amber-400", Annoyed: "text-amber-400",
@@ -49,59 +57,37 @@ const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-border bg-popover p-2 shadow-xl text-xs">
-      <p className="font-medium">{label}</p>
+      <p className="font-semibold text-foreground mb-1">{label}</p>
       {payload.map((p) => (
-        <p key={p.dataKey} style={{ color: p.color }}>{p.dataKey}: {p.value}</p>
+        <p key={p.dataKey} className="text-muted-foreground">
+          {p.dataKey}: <span className="font-medium text-foreground">{p.value}</span>
+        </p>
       ))}
     </div>
   );
 };
 
 export default function Analytics() {
+  const { aiInsights, sentimentComplaints, loading, error } = useAnalytics();
+
   return (
     <DashboardLayout>
       <div className="space-y-5">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-foreground tracking-tight">AI Analysis Engine</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Machine learning insights, classification, and predictive intelligence
-            </p>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20">
-            <Brain size={14} className="text-primary" />
-            <div>
-              <p className="text-[10px] text-muted-foreground">Model Version</p>
-              <p className="text-xs font-bold text-primary">NxtAI v2.4.1</p>
-            </div>
-          </div>
+        <div>
+          <h1 className="text-xl font-bold text-foreground tracking-tight">AI Analysis</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            AI-powered insights, sentiment analysis and model performance
+          </p>
         </div>
 
-        {/* Model Performance Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            { label: "Classification Accuracy", value: "94.2%", icon: Brain, color: "text-primary", bg: "bg-primary/10" },
-            { label: "Duplicates Detected", value: "312", icon: Copy, color: "text-purple-400", bg: "bg-purple-500/10" },
-            { label: "Risk Alerts Generated", value: "47", icon: ShieldAlert, color: "text-red-400", bg: "bg-red-500/10" },
-            { label: "Dept. Routing Accuracy", value: "91.7%", icon: Zap, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-          ].map((m) => {
-            const Icon = m.icon;
-            return (
-              <Card key={m.label} className="border-border">
-                <CardContent className="p-4">
-                  <div className={`inline-flex p-2 rounded-lg ${m.bg} mb-2`}>
-                    <Icon size={14} className={m.color} />
-                  </div>
-                  <p className="text-xl font-bold text-foreground">{m.value}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{m.label}</p>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        {/* Error banner */}
+        {error && (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-xs text-destructive flex items-center gap-2">
+            <Brain size={13} /> Could not load analytics data — {error}
+          </div>
+        )}
 
-        {/* Tabs */}
         <Tabs defaultValue="insights">
           <TabsList className="bg-muted/50">
             <TabsTrigger value="insights">AI Insights</TabsTrigger>
@@ -112,49 +98,69 @@ export default function Analytics() {
 
           {/* Insights Tab */}
           <TabsContent value="insights">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-              {aiInsights.map((insight) => (
-                <Card key={insight.id} className="border-border hover:border-primary/30 transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge variant="info" className="text-[10px]">{insight.type}</Badge>
-                      <Badge variant={insight.priority === "Critical" ? "critical" : insight.priority === "High" ? "high" : "medium"} className="text-[10px]">
-                        {insight.priority}
-                      </Badge>
+            <div className="mt-4 space-y-3">
+              {loading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="rounded-lg border border-border p-4 flex gap-3">
+                    <Skeleton className="w-8 h-8 rounded-md shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-3 w-3/4" />
+                      <Skeleton className="h-2 w-full" />
+                      <Skeleton className="h-2 w-5/6" />
                     </div>
-                    <h3 className="text-sm font-semibold text-foreground mb-1">{insight.title}</h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed mb-3">{insight.description}</p>
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">AI Confidence</span>
-                        <span className="font-medium text-primary">{insight.confidence}%</span>
+                  </div>
+                ))
+              ) : (
+                aiInsights.map((insight) => {
+                  const config = typeConfig[insight.type] ?? typeConfig.Pattern;
+                  const Icon = config.icon;
+                  return (
+                    <div
+                      key={insight.id}
+                      className={`rounded-lg border ${config.border} bg-card p-4 hover:bg-accent/20 transition-colors cursor-pointer`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`mt-0.5 p-2 rounded-lg ${config.bg} ${config.border} border shrink-0`}>
+                          <Icon size={14} className={config.color} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <p className="text-sm font-semibold text-foreground leading-tight">{insight.title}</p>
+                            <Badge variant={priorityVariant[insight.priority] ?? "outline"} className="text-[10px] shrink-0">
+                              {insight.priority}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground leading-relaxed">{insight.description}</p>
+                          <div className="flex items-center justify-between mt-3">
+                            <div className="flex items-center gap-2">
+                              <div className="h-1.5 w-16 rounded-full bg-secondary overflow-hidden">
+                                <div className="h-full rounded-full bg-primary" style={{ width: `${insight.confidence}%` }} />
+                              </div>
+                              <span className="text-[11px] text-muted-foreground">{insight.confidence}% confidence</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                              <span>{insight.department}</span>
+                              <span>{insight.timestamp}</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <Progress value={insight.confidence} indicatorClassName="bg-primary" />
                     </div>
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                        <Activity size={10} />
-                        {insight.department}
-                      </div>
-                      <button className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">
-                        {insight.action} →
-                      </button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  );
+                })
+              )}
             </div>
           </TabsContent>
 
           {/* Duplicates Tab */}
           <TabsContent value="duplicates">
-            <div className="mt-4 space-y-3">
+            <div className="mt-4">
               <Card className="border-border">
                 <CardHeader className="pb-2">
                   <div className="flex items-center gap-2">
-                    <Copy size={14} className="text-purple-400" />
-                    <CardTitle className="text-sm">Detected Duplicate Clusters</CardTitle>
-                    <span className="text-[10px] ml-auto text-muted-foreground">312 duplicates → 47 unique issues</span>
+                    <Copy size={14} className="text-primary" />
+                    <CardTitle className="text-sm">Duplicate Complaint Clusters</CardTitle>
+                    <Badge variant="purple" className="text-[10px] ml-auto">312 total duplicates</Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 space-y-3">
@@ -212,22 +218,26 @@ export default function Analytics() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-2">
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={sentimentData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 5%)" />
-                      <XAxis dataKey="id" tick={{ fontSize: 9 }} />
-                      <YAxis tick={{ fontSize: 9 }} domain={[0, 10]} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Bar dataKey="risk" radius={[3, 3, 0, 0]}>
-                        {sentimentData.map((entry) => (
-                          <Cell
-                            key={entry.id}
-                            fill={entry.risk >= 9 ? "#ef4444" : entry.risk >= 7 ? "#f97316" : "#22c55e"}
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {loading ? (
+                    <Skeleton className="w-full h-[200px] rounded-lg" />
+                  ) : (
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={sentimentComplaints} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 5%)" />
+                        <XAxis dataKey="id" tick={{ fontSize: 9 }} />
+                        <YAxis tick={{ fontSize: 9 }} domain={[0, 10]} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Bar dataKey="risk" radius={[3, 3, 0, 0]}>
+                          {sentimentComplaints.map((entry) => (
+                            <Cell
+                              key={entry.id}
+                              fill={entry.risk >= 9 ? "#ef4444" : entry.risk >= 7 ? "#f97316" : "#22c55e"}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
                 </CardContent>
               </Card>
               <Card className="border-border lg:col-span-2">
@@ -235,27 +245,37 @@ export default function Analytics() {
                   <CardTitle className="text-sm">Complaint-Level Sentiment Analysis</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 space-y-2">
-                  {sentimentData.map((c) => {
-                    const Icon = sentimentIcon[c.sentiment] ?? Meh;
-                    const color = sentimentColor[c.sentiment] ?? "text-muted-foreground";
-                    return (
-                      <div key={c.id} className="flex items-center gap-3 py-2 border-b border-border/50 last:border-0">
-                        <Icon size={14} className={`shrink-0 ${color}`} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-foreground truncate">{c.title}</p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className={`text-[11px] font-medium ${color}`}>{c.sentiment}</span>
-                          <div className="flex items-center gap-1">
-                            <span className="text-[10px] text-muted-foreground">Risk:</span>
-                            <span className={`text-[11px] font-bold ${c.risk >= 9 ? "text-red-400" : c.risk >= 7 ? "text-orange-400" : "text-emerald-400"}`}>
-                              {c.risk}
-                            </span>
+                  {loading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-3 py-2">
+                        <Skeleton className="w-4 h-4 rounded-full" />
+                        <Skeleton className="h-3 flex-1" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                    ))
+                  ) : (
+                    sentimentComplaints.map((c) => {
+                      const Icon = sentimentIcon[c.sentiment] ?? Meh;
+                      const color = sentimentColor[c.sentiment] ?? "text-muted-foreground";
+                      return (
+                        <div key={c.id} className="flex items-center gap-3 py-2 border-b border-border/50 last:border-0">
+                          <Icon size={14} className={`shrink-0 ${color}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-foreground truncate">{c.title}</p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`text-[11px] font-medium ${color}`}>{c.sentiment}</span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-muted-foreground">Risk:</span>
+                              <span className={`text-[11px] font-bold ${c.risk >= 9 ? "text-red-400" : c.risk >= 7 ? "text-orange-400" : "text-emerald-400"}`}>
+                                {c.risk}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </CardContent>
               </Card>
             </div>

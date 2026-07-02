@@ -1,5 +1,6 @@
-import { dashboardStats } from "@/data/mockData";
+import { useDashboard } from "@/hooks/useDashboard";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   FileText,
   Clock,
@@ -11,11 +12,13 @@ import {
   TrendingDown,
 } from "lucide-react";
 
-const stats = [
+const statConfigs = [
   {
+    key: "totalComplaints",
     label: "Total Complaints",
-    value: "4,827",
-    change: "+12.3%",
+    suffix: "",
+    format: (v) => (v != null ? Number(v).toLocaleString() : "—"),
+    change: null,
     trend: "up",
     icon: FileText,
     color: "text-blue-400",
@@ -24,9 +27,9 @@ const stats = [
     sub: "All time",
   },
   {
+    key: "pendingComplaints",
     label: "Pending",
-    value: "1,243",
-    change: "+5.2%",
+    format: (v) => (v != null ? Number(v).toLocaleString() : "—"),
     trend: "up",
     icon: Clock,
     color: "text-amber-400",
@@ -35,9 +38,9 @@ const stats = [
     sub: "Awaiting action",
   },
   {
+    key: "resolvedComplaints",
     label: "Resolved",
-    value: "3,284",
-    change: "+18.7%",
+    format: (v) => (v != null ? Number(v).toLocaleString() : "—"),
     trend: "up",
     icon: CheckCircle2,
     color: "text-emerald-400",
@@ -46,9 +49,9 @@ const stats = [
     sub: "This month",
   },
   {
+    key: "criticalIssues",
     label: "Critical Issues",
-    value: "89",
-    change: "-3.1%",
+    format: (v) => (v != null ? String(v) : "—"),
     trend: "down",
     icon: AlertTriangle,
     color: "text-red-400",
@@ -57,9 +60,9 @@ const stats = [
     sub: "Needs immediate action",
   },
   {
+    key: "aiConfidenceScore",
     label: "AI Confidence",
-    value: "94.2%",
-    change: "+1.8%",
+    format: (v) => (v != null ? `${v}%` : "—"),
     trend: "up",
     icon: Brain,
     color: "text-purple-400",
@@ -68,9 +71,9 @@ const stats = [
     sub: "Model accuracy",
   },
   {
+    key: "avgResolutionDays",
     label: "Avg. Resolution",
-    value: "3.7d",
-    change: "-0.8d",
+    format: (v) => (v != null ? `${v}d` : "—"),
     trend: "down",
     icon: Timer,
     color: "text-cyan-400",
@@ -80,12 +83,44 @@ const stats = [
   },
 ];
 
+function StatCardSkeleton() {
+  return (
+    <Card className="border-border">
+      <CardContent className="p-4">
+        <Skeleton className="w-8 h-8 rounded-lg mb-3" />
+        <Skeleton className="h-6 w-16 mb-1" />
+        <Skeleton className="h-3 w-24 mb-2" />
+        <Skeleton className="h-3 w-12" />
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function StatsCards() {
+  const { stats, loading, error } = useDashboard();
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+        {statConfigs.map((s) => <StatCardSkeleton key={s.key} />)}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-xs text-destructive">
+        ⚠ Could not load stats — {error}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-      {stats.map((stat) => {
+      {statConfigs.map((stat) => {
         const Icon = stat.icon;
         const TrendIcon = stat.trend === "up" ? TrendingUp : TrendingDown;
+        const value = stats ? stat.format(stats[stat.key]) : "—";
         const trendColor =
           stat.label === "Critical Issues"
             ? stat.trend === "down" ? "text-emerald-400" : "text-red-400"
@@ -95,18 +130,18 @@ export default function StatsCards() {
 
         return (
           <Card
-            key={stat.label}
+            key={stat.key}
             className={`border ${stat.border} bg-card hover:bg-accent/20 transition-all duration-200 cursor-default group`}
           >
             <CardContent className="p-4">
               <div className={`inline-flex p-2 rounded-lg ${stat.bg} ${stat.border} border mb-3`}>
                 <Icon size={14} className={stat.color} />
               </div>
-              <p className="text-xl font-bold text-foreground tracking-tight">{stat.value}</p>
+              <p className="text-xl font-bold text-foreground tracking-tight">{value}</p>
               <p className="text-xs text-muted-foreground mt-0.5 mb-2">{stat.label}</p>
               <div className="flex items-center gap-1">
                 <TrendIcon size={10} className={trendColor} />
-                <span className={`text-[10px] font-medium ${trendColor}`}>{stat.change}</span>
+                <span className={`text-[10px] font-medium ${trendColor}`}>{stat.sub}</span>
               </div>
             </CardContent>
           </Card>

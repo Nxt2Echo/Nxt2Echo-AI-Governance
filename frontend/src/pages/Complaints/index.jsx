@@ -1,9 +1,9 @@
-import { useState, useMemo } from "react";
 import DashboardLayout from "@/layouts/DashboardLayout";
-import { complaints } from "@/data/mockData";
+import { useComplaints } from "@/hooks/useComplaints";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -20,55 +20,48 @@ const priorityVariant = {
   Critical: "critical", High: "high", Medium: "medium", Low: "low",
 };
 
-const PAGE_SIZE = 10;
+function TableSkeleton() {
+  return (
+    <>
+      {Array.from({ length: 8 }).map((_, i) => (
+        <TableRow key={i}>
+          <TableCell><Skeleton className="h-3 w-16" /></TableCell>
+          <TableCell>
+            <Skeleton className="h-3 w-36 mb-1" />
+            <Skeleton className="h-2 w-24" />
+          </TableCell>
+          <TableCell className="hidden md:table-cell"><Skeleton className="h-3 w-20" /></TableCell>
+          <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
+          <TableCell className="hidden lg:table-cell"><Skeleton className="h-3 w-20" /></TableCell>
+          <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+          <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-14" /></TableCell>
+          <TableCell className="hidden xl:table-cell"><Skeleton className="h-2 w-16" /></TableCell>
+          <TableCell className="hidden md:table-cell"><Skeleton className="h-3 w-20" /></TableCell>
+        </TableRow>
+      ))}
+    </>
+  );
+}
 
 export default function Complaints() {
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [priorityFilter, setPriorityFilter] = useState("All");
-  const [categoryFilter, setCategoryFilter] = useState("All");
-  const [page, setPage] = useState(1);
-  const [sortField, setSortField] = useState("date");
-  const [sortDir, setSortDir] = useState("desc");
-
-  const categories = useMemo(() => ["All", ...new Set(complaints.map((c) => c.category))], []);
-
-  const filtered = useMemo(() => {
-    let data = [...complaints];
-    if (search) {
-      const q = search.toLowerCase();
-      data = data.filter(
-        (c) =>
-          c.title.toLowerCase().includes(q) ||
-          c.id.toLowerCase().includes(q) ||
-          c.area.toLowerCase().includes(q) ||
-          c.department.toLowerCase().includes(q)
-      );
-    }
-    if (statusFilter !== "All") data = data.filter((c) => c.status === statusFilter);
-    if (priorityFilter !== "All") data = data.filter((c) => c.priority === priorityFilter);
-    if (categoryFilter !== "All") data = data.filter((c) => c.category === categoryFilter);
-
-    data.sort((a, b) => {
-      let av = a[sortField], bv = b[sortField];
-      if (typeof av === "string") av = av.toLowerCase(), bv = bv.toLowerCase();
-      if (av < bv) return sortDir === "asc" ? -1 : 1;
-      if (av > bv) return sortDir === "asc" ? 1 : -1;
-      return 0;
-    });
-    return data;
-  }, [search, statusFilter, priorityFilter, categoryFilter, sortField, sortDir]);
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  const toggleSort = (field) => {
-    if (sortField === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else { setSortField(field); setSortDir("asc"); }
-    setPage(1);
-  };
-
-  const resetPage = () => setPage(1);
+  const {
+    complaints,
+    total,
+    totalPages,
+    categories,
+    loading,
+    error,
+    search, setSearch,
+    statusFilter, setStatusFilter,
+    priorityFilter, setPriorityFilter,
+    categoryFilter, setCategoryFilter,
+    page, setPage,
+    sortField,
+    sortDir,
+    toggleSort,
+    resetPage,
+    PAGE_SIZE,
+  } = useComplaints();
 
   return (
     <DashboardLayout>
@@ -78,62 +71,68 @@ export default function Complaints() {
           <div>
             <h1 className="text-xl font-bold text-foreground tracking-tight">Complaint Management</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {filtered.length.toLocaleString()} complaints · AI-classified and prioritized
+              All citizen complaints · Bengaluru, KA
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-card border border-border rounded-lg px-3 py-2">
-            <Brain size={12} className="text-primary" />
-            AI Classification Active
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <FileText size={13} />
+            {loading ? "Loading…" : `${total.toLocaleString()} total`}
           </div>
         </div>
 
+        {/* Error banner */}
+        {error && (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-xs text-destructive flex items-center gap-2">
+            <Brain size={13} /> Could not load complaints — {error}
+          </div>
+        )}
+
         {/* Filters */}
         <Card className="border-border">
-          <CardContent className="p-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative flex-1 min-w-48">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search by ID, title, area, department..."
-                  value={search}
-                  onChange={(e) => { setSearch(e.target.value); resetPage(); }}
-                  className="pl-9 h-8 text-xs bg-background"
-                />
-              </div>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                <Filter size={12} />
-                <span>Filters:</span>
-              </div>
-              <div className="w-32">
-                <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); resetPage(); }}>
-                  <SelectTrigger className="h-8 text-xs">{statusFilter}</SelectTrigger>
-                  <SelectContent>
-                    {["All", "Critical", "In Progress", "Pending", "Resolved"].map((s) => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="w-28">
-                <Select value={priorityFilter} onValueChange={(v) => { setPriorityFilter(v); resetPage(); }}>
-                  <SelectTrigger className="h-8 text-xs">{priorityFilter}</SelectTrigger>
-                  <SelectContent>
-                    {["All", "Critical", "High", "Medium", "Low"].map((p) => (
-                      <SelectItem key={p} value={p}>{p}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="w-36">
-                <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); resetPage(); }}>
-                  <SelectTrigger className="h-8 text-xs">{categoryFilter}</SelectTrigger>
-                  <SelectContent>
-                    {categories.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          <CardHeader className="pb-2 pt-3 px-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+              <Filter size={12} /> Filters
+            </div>
+          </CardHeader>
+          <CardContent className="px-4 pb-3 flex flex-wrap gap-2">
+            <div className="flex items-center gap-2 flex-1 min-w-[180px]">
+              <Search size={13} className="text-muted-foreground shrink-0" />
+              <Input
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); resetPage(); }}
+                placeholder="Search complaints…"
+                className="h-8 text-xs bg-background"
+              />
+            </div>
+            <div className="w-28">
+              <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); resetPage(); }}>
+                <SelectTrigger className="h-8 text-xs">{statusFilter}</SelectTrigger>
+                <SelectContent>
+                  {["All", "Critical", "In Progress", "Pending", "Resolved"].map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-28">
+              <Select value={priorityFilter} onValueChange={(v) => { setPriorityFilter(v); resetPage(); }}>
+                <SelectTrigger className="h-8 text-xs">{priorityFilter}</SelectTrigger>
+                <SelectContent>
+                  {["All", "Critical", "High", "Medium", "Low"].map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-36">
+              <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); resetPage(); }}>
+                <SelectTrigger className="h-8 text-xs">{categoryFilter}</SelectTrigger>
+                <SelectContent>
+                  {categories.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
@@ -175,14 +174,16 @@ export default function Complaints() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paged.length === 0 ? (
+              {loading ? (
+                <TableSkeleton />
+              ) : complaints.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-12 text-muted-foreground text-sm">
                     No complaints match your filters.
                   </TableCell>
                 </TableRow>
               ) : (
-                paged.map((c) => (
+                complaints.map((c) => (
                   <TableRow key={c.id} className="cursor-pointer">
                     <TableCell className="font-mono text-xs text-muted-foreground">{c.id}</TableCell>
                     <TableCell>
@@ -242,7 +243,9 @@ export default function Complaints() {
           {/* Pagination */}
           <div className="flex items-center justify-between px-4 py-3 border-t border-border">
             <span className="text-xs text-muted-foreground">
-              Showing {Math.min((page - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
+              {loading
+                ? "Loading…"
+                : `Showing ${Math.min((page - 1) * PAGE_SIZE + 1, total)}–${Math.min(page * PAGE_SIZE, total)} of ${total}`}
             </span>
             <div className="flex items-center gap-1">
               <button

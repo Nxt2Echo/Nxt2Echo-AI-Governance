@@ -1,8 +1,8 @@
 // ============================================================
-// Nxt2Echo – AI Governance Platform: Mock Data
+// Nxt2Echo – AI Governance Platform: Fallback / Placeholder Data
 // ============================================================
 
-export const dashboardStats = {
+export const fallbackStats = {
   totalComplaints: 4827,
   pendingComplaints: 1243,
   resolvedComplaints: 3284,
@@ -13,7 +13,7 @@ export const dashboardStats = {
   satisfactionRate: 87.4,
 };
 
-export const complaints = [
+export const fallbackComplaints = [
   { id: "CMP-001", title: "Pothole on MG Road causing accidents", status: "Critical", priority: "High", category: "Infrastructure", department: "PWD", area: "Koramangala", date: "2024-06-15", description: "Large pothole on MG Road near signal causing vehicle damage.", aiScore: 96, sentiment: "Angry", risk: 9.2 },
   { id: "CMP-002", title: "Water supply disruption for 3 days", status: "In Progress", priority: "High", category: "Water Supply", department: "BWSSB", area: "Indiranagar", date: "2024-06-14", description: "No water supply in the area for 3 consecutive days.", aiScore: 91, sentiment: "Frustrated", risk: 8.1 },
   { id: "CMP-003", title: "Garbage not collected for 2 weeks", status: "Pending", priority: "Medium", category: "Sanitation", department: "BBMP", area: "HSR Layout", date: "2024-06-14", description: "Garbage collection skipped for over 2 weeks.", aiScore: 88, sentiment: "Disappointed", risk: 6.5 },
@@ -36,7 +36,7 @@ export const complaints = [
   { id: "CMP-020", title: "Contaminated water supply reported", status: "Critical", priority: "Critical", category: "Water Supply", department: "BWSSB", area: "Ramamurthy Nagar", date: "2024-06-05", description: "Residents reporting brown contaminated water from taps.", aiScore: 97, sentiment: "Outraged", risk: 9.7 },
 ];
 
-export const complaintTrendData = [
+export const fallbackTrendData = [
   { month: "Jan", complaints: 312, resolved: 289 },
   { month: "Feb", complaints: 287, resolved: 261 },
   { month: "Mar", complaints: 398, resolved: 354 },
@@ -51,7 +51,7 @@ export const complaintTrendData = [
   { month: "Dec", complaints: 298, resolved: 276 },
 ];
 
-export const categoryData = [
+export const fallbackCategoryData = [
   { name: "Infrastructure", value: 1243, color: "#6366f1" },
   { name: "Sanitation", value: 987, color: "#22d3ee" },
   { name: "Water Supply", value: 756, color: "#3b82f6" },
@@ -61,7 +61,7 @@ export const categoryData = [
   { name: "Transport", value: 297, color: "#8b5cf6" },
 ];
 
-export const departmentData = [
+export const fallbackDepartmentData = [
   { name: "BBMP", total: 1876, resolved: 1654, rate: 88.2, avgDays: 2.8 },
   { name: "BWSSB", total: 892, resolved: 743, rate: 83.3, avgDays: 4.1 },
   { name: "BESCOM", total: 734, resolved: 689, rate: 93.9, avgDays: 1.9 },
@@ -71,14 +71,7 @@ export const departmentData = [
   { name: "BDA", total: 194, resolved: 165, rate: 85.1, avgDays: 4.7 },
 ];
 
-export const priorityData = [
-  { name: "Critical", value: 89, color: "#ef4444" },
-  { name: "High", value: 634, color: "#f97316" },
-  { name: "Medium", value: 1892, color: "#eab308" },
-  { name: "Low", value: 2212, color: "#22c55e" },
-];
-
-export const aiInsights = [
+export const fallbackAIInsights = [
   {
     id: 1,
     type: "Pattern",
@@ -141,7 +134,7 @@ export const aiInsights = [
   },
 ];
 
-export const activityFeed = [
+export const fallbackActivityFeed = [
   { id: 1, action: "Complaint CMP-011 escalated to Critical", actor: "AI System", time: "2 min ago", type: "escalation" },
   { id: 2, action: "CMP-015 marked as Resolved by BESCOM team", actor: "Team BESCOM", time: "14 min ago", type: "resolved" },
   { id: 3, action: "312 duplicate complaints auto-merged", actor: "AI System", time: "28 min ago", type: "ai" },
@@ -152,7 +145,7 @@ export const activityFeed = [
   { id: 8, action: "Emergency alert sent to BWSSB for CMP-006", actor: "AI System", time: "4 hr ago", type: "critical" },
 ];
 
-export const heatmapZones = [
+export const fallbackHeatmapZones = [
   { id: 1, name: "BTM Layout", risk: "Critical", complaints: 147, category: "Sanitation", lat: 12.9166, lng: 77.6101, trend: "+23%" },
   { id: 2, name: "Whitefield", risk: "High", complaints: 98, category: "Water Supply", lat: 12.9698, lng: 77.7499, trend: "+12%" },
   { id: 3, name: "Koramangala", risk: "High", complaints: 87, category: "Infrastructure", lat: 12.9352, lng: 77.6245, trend: "+8%" },
@@ -164,7 +157,7 @@ export const heatmapZones = [
   { id: 9, name: "Malleswaram", risk: "Low", complaints: 21, category: "Public Spaces", lat: 13.0035, lng: 77.5689, trend: "-3%" },
 ];
 
-export const reportTemplates = [
+export const fallbackReportTemplates = [
   { id: 1, title: "Executive Summary Report", description: "High-level overview of all complaints and resolutions for Commissioner", type: "PDF", frequency: "Weekly", lastGenerated: "Jun 24, 2024", size: "2.3 MB", category: "executive" },
   { id: 2, title: "Department Performance Report", description: "Detailed department-wise resolution rates, SLA compliance, and trends", type: "XLSX", frequency: "Monthly", lastGenerated: "Jun 01, 2024", size: "4.7 MB", category: "department" },
   { id: 3, title: "AI Analysis Report", description: "AI model accuracy, duplicate detection stats, and prediction outcomes", type: "PDF", frequency: "Weekly", lastGenerated: "Jun 24, 2024", size: "1.8 MB", category: "ai" },
@@ -173,7 +166,7 @@ export const reportTemplates = [
   { id: 6, title: "Citizen Satisfaction Report", description: "Feedback analysis and satisfaction scores by area and department", type: "XLSX", frequency: "Monthly", lastGenerated: "Jun 01, 2024", size: "2.1 MB", category: "satisfaction" },
 ];
 
-export const weeklyStats = {
+export const fallbackWeeklyStats = {
   newComplaints: 287,
   resolved: 312,
   escalated: 23,
