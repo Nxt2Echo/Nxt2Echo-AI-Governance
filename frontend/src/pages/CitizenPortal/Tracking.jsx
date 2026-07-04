@@ -13,11 +13,13 @@ const STORAGE_KEY = "nxt2echo_my_complaints";
 const POLL_INTERVAL = 30000; // 30 seconds
 
 const CATEGORY_ICONS = {
-  Infrastructure: <Flame size={13} />,
-  WaterSupply: <Droplets size={13} />,
-  Electricity: <Zap size={13} />,
-  Sanitation: <Trash2 size={13} />,
-  PublicSafety: <ShieldAlert size={13} />,
+  "Road Damage": <Flame size={13} />,
+  "Water Supply": <Droplets size={13} />,
+  "Street Lights": <Zap size={13} />,
+  "Garbage": <Trash2 size={13} />,
+  "Flood": <ShieldAlert size={13} />,
+  "Drainage": <Trash2 size={13} />,
+  "Air Pollution": <ShieldAlert size={13} />,
 };
 
 const SEVERITY_COLORS = {

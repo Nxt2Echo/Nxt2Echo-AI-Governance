@@ -139,7 +139,7 @@ export default function CitizenPortal() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         userId: user?.id || user?.uid || "local",
-        department: { Infrastructure: "PWD", WaterSupply: "BWSSB", Sanitation: "BBMP", Electricity: "BESCOM", PublicSafety: "BBMP", Drainage: "BBMP" }[category] || "BBMP",
+        department: { "Road Damage": "PWD", "Water Supply": "BWSSB", "Garbage": "BBMP", "Street Lights": "BESCOM", "Drainage": "BBMP" }[category] || "BBMP",
         ...submittedComplaint,
         _local: true,
       };
@@ -221,13 +221,13 @@ export default function CitizenPortal() {
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                 >
-                  <option value="WaterSupply">Water Supply</option>
-                  <option value="Sanitation">Sanitation & Garbage</option>
-                  <option value="Infrastructure">Roads & Infrastructure</option>
-                  <option value="Electricity">Street Lights & Electricity</option>
+                  <option value="Water Supply">Water Supply</option>
+                  <option value="Garbage">Sanitation & Garbage</option>
+                  <option value="Road Damage">Roads & Infrastructure</option>
+                  <option value="Street Lights">Street Lights & Electricity</option>
                   <option value="Drainage">Drainage & Sewage</option>
-                  <option value="Environment">Air & Environment</option>
-                  <option value="PublicSafety">Public Safety</option>
+                  <option value="Air Pollution">Air & Environment</option>
+                  <option value="Flood">Flood & Public Safety</option>
                   <option value="Others">Others</option>
                 </select>
               </div>
