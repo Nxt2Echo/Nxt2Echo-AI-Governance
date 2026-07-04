@@ -34,21 +34,21 @@ export default function Dashboard() {
         )}
 
         {/* Page Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-foreground tracking-tight">
+            <h1 className="text-lg md:text-xl font-bold text-foreground tracking-tight">
               Governance Intelligence Dashboard
             </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Real-time overview of citizen complaints and AI-powered insights · Bengaluru, KA
+            <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+              Real-time overview · Bengaluru, KA
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-xs text-primary font-medium">
               <Brain size={12} />
               AI Engine Active
             </div>
-            <button 
+            <button
               onClick={handleRefresh}
               disabled={isRefreshing}
               className="p-1.5 rounded-lg hover:bg-accent border border-border transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50"

@@ -135,13 +135,13 @@ export default function CitizenPortal() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto py-8">
-        <div className="flex items-center justify-between mb-8">
+      <div className="max-w-3xl mx-auto py-4 md:py-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 md:mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Register a Complaint</h1>
-            <p className="text-muted-foreground mt-1 text-sm">Submit your issue via text, photo, or voice recording.</p>
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">Register a Complaint</h1>
+            <p className="text-muted-foreground mt-1 text-xs md:text-sm">Submit your issue via text, photo, or voice recording.</p>
           </div>
-          <Link to="/citizen/tracking" className="text-sm bg-primary/10 text-primary border border-primary/20 px-4 py-2 rounded-lg hover:bg-primary/20 transition-colors">
+          <Link to="/citizen/tracking" className="self-start sm:self-auto text-sm bg-primary/10 text-primary border border-primary/20 px-4 py-2 rounded-lg hover:bg-primary/20 transition-colors shrink-0">
             Track Complaints
           </Link>
         </div>

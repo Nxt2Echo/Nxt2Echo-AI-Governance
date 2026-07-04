@@ -1,4 +1,4 @@
-import { Bell, Search, ChevronDown, Zap, AlertCircle, Info, LogOut, X } from "lucide-react";
+import { Bell, ChevronDown, AlertCircle, Info, LogOut, X, Menu } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
@@ -10,9 +10,11 @@ const pageTitles = {
   "/heatmap": { title: "Heatmap", sub: "Geographic complaint distribution" },
   "/reports": { title: "Reports", sub: "Analytics, exports and summaries" },
   "/settings": { title: "Settings", sub: "Platform configuration and preferences" },
+  "/citizen": { title: "Create Complaint", sub: "Submit your issue to local authorities" },
+  "/citizen/tracking": { title: "Track Complaints", sub: "Monitor your submitted complaints" },
 };
 
-export default function Navbar() {
+export default function Navbar({ onMenuClick }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -20,8 +22,14 @@ export default function Navbar() {
   const [showAlerts, setShowAlerts] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
-  
+
   const page = pageTitles[location.pathname] || pageTitles["/"];
+
+  const closeAll = () => {
+    setShowNotifications(false);
+    setShowAlerts(false);
+    setShowProfileMenu(false);
+  };
 
   const handleLogout = () => {
     logout();
@@ -29,37 +37,47 @@ export default function Navbar() {
   };
 
   return (
-    <header className="h-14 bg-card border-b border-border flex items-center justify-between px-6 shrink-0">
-      {/* Page Title */}
-      <div className="flex flex-col">
-        <h2 className="text-sm font-semibold text-foreground leading-tight">{page.title}</h2>
-        <p className="text-xs text-muted-foreground leading-tight">{page.sub}</p>
+    <header className="h-14 bg-card border-b border-border flex items-center justify-between px-3 md:px-6 shrink-0 gap-2">
+
+      {/* Left: Hamburger (mobile only) + Page Title */}
+      <div className="flex items-center gap-2 min-w-0">
+        {/* Hamburger — only on mobile */}
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground shrink-0"
+          aria-label="Open menu"
+        >
+          <Menu size={18} />
+        </button>
+
+        <div className="flex flex-col min-w-0">
+          <h2 className="text-sm font-semibold text-foreground leading-tight truncate">{page.title}</h2>
+          <p className="text-xs text-muted-foreground leading-tight hidden sm:block truncate">{page.sub}</p>
+        </div>
       </div>
 
       {/* Right Section */}
-      <div className="flex items-center gap-2">
-        {/* AI Status Pill */}
-        <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+      <div className="flex items-center gap-1 md:gap-2 shrink-0">
+
+        {/* AI Status Pill — hidden on small mobile */}
+        <div className="hidden sm:flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs font-medium text-emerald-400">AI Online · 94.2%</span>
+          <span className="text-xs font-medium text-emerald-400 hidden md:inline">AI Online · 94.2%</span>
+          <span className="text-xs font-medium text-emerald-400 md:hidden">AI</span>
         </div>
 
-        {/* Alert Badge (Inverted i / AlertCircle) */}
+        {/* Alert Badge */}
         <div className="relative">
-          <button 
-            onClick={() => {
-              setShowAlerts(!showAlerts);
-              setShowNotifications(false);
-              setShowProfileMenu(false);
-            }}
+          <button
+            onClick={() => { setShowAlerts(!showAlerts); setShowNotifications(false); setShowProfileMenu(false); }}
             className="relative p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
           >
             <AlertCircle size={16} />
             <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full" />
           </button>
-          
+
           {showAlerts && (
-            <div className="absolute right-0 mt-2 w-72 bg-card border border-border rounded-lg shadow-lg z-50 p-2">
+            <div className="absolute right-0 mt-2 w-64 md:w-72 bg-card border border-border rounded-lg shadow-lg z-50 p-2">
               <div className="flex items-center gap-2 px-2 py-1 border-b border-border mb-1 text-red-500">
                 <AlertCircle size={14} />
                 <span className="text-xs font-semibold">Critical Alerts</span>
@@ -77,7 +95,7 @@ export default function Navbar() {
         </div>
 
         {/* Info Icon */}
-        <button 
+        <button
           onClick={() => setShowInfoModal(true)}
           className="relative p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
         >
@@ -87,17 +105,13 @@ export default function Navbar() {
         {/* Notifications */}
         <div className="relative">
           <button
-            onClick={() => {
-              setShowNotifications(!showNotifications);
-              setShowAlerts(false);
-              setShowProfileMenu(false);
-            }}
+            onClick={() => { setShowNotifications(!showNotifications); setShowAlerts(false); setShowProfileMenu(false); }}
             className="relative p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
           >
             <Bell size={16} />
             <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-primary rounded-full" />
           </button>
-          
+
           {showNotifications && (
             <div className="absolute right-0 mt-2 w-64 bg-card border border-border rounded-lg shadow-lg z-50 p-2">
               <div className="text-xs font-semibold text-foreground px-2 py-1 border-b border-border mb-1">Notifications</div>
@@ -112,30 +126,30 @@ export default function Navbar() {
         </div>
 
         {/* Divider */}
-        <div className="w-px h-5 bg-border mx-1" />
+        <div className="w-px h-5 bg-border mx-0.5 hidden sm:block" />
 
         {/* User */}
         <div className="relative">
-          <button 
-            onClick={() => {
-              setShowProfileMenu(!showProfileMenu);
-              setShowNotifications(false);
-              setShowAlerts(false);
-            }}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-accent transition-colors"
+          <button
+            onClick={() => { setShowProfileMenu(!showProfileMenu); setShowNotifications(false); setShowAlerts(false); }}
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-accent transition-colors"
           >
-            <div className="w-6 h-6 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[10px] font-bold text-primary">
+            <div className="w-6 h-6 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
               {user?.name?.substring(0, 2).toUpperCase() || "GO"}
             </div>
-            <div className="hidden md:block text-left">
-              <p className="text-xs font-medium text-foreground leading-none">{user?.name || "Gov. Officer"}</p>
-            </div>
+            <span className="hidden md:block text-xs font-medium text-foreground max-w-[80px] truncate">
+              {user?.name || user?.role || "User"}
+            </span>
             <ChevronDown size={12} className="text-muted-foreground" />
           </button>
 
           {showProfileMenu && (
             <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg z-50 p-1">
-              <button 
+              <div className="px-3 py-2 border-b border-border mb-1">
+                <p className="text-xs font-medium text-foreground truncate">{user?.name || "User"}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{user?.email || user?.role}</p>
+              </div>
+              <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 rounded transition-colors"
               >
@@ -149,9 +163,9 @@ export default function Navbar() {
 
       {/* Info Modal */}
       {showInfoModal && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-md p-6 relative">
-            <button 
+            <button
               onClick={() => setShowInfoModal(false)}
               className="absolute top-4 right-4 p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors"
             >
