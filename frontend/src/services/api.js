@@ -15,7 +15,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
  * @param {RequestInit} [options] - Optional fetch options
  * @returns {Promise<any>} Parsed JSON response
  */
-async function apiFetch(path, options = {}) {
+export async function apiFetch(path, options = {}) {
   const url = `${BASE_URL}${path}`;
   let token = null;
   

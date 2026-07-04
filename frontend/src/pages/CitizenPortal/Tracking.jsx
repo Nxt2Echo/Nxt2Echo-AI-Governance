@@ -5,6 +5,7 @@ import { auth } from "../../lib/firebase";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { MapPin, Clock, CheckCircle2, AlertCircle, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { apiFetch } from "@/services/api";
 
 export default function CitizenTracking() {
   const { user } = useAuth();
@@ -15,17 +16,20 @@ export default function CitizenTracking() {
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
-        if (!user || !auth.currentUser) return;
-        const token = await auth.currentUser.getIdToken();
-        const response = await fetch(`http://localhost:5000/api/complaints?userId=${user.id || user.uid}`, {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
-        if (!response.ok) throw new Error("Failed to fetch complaints");
+        if (!user) return;
         
-        const data = await response.json();
-        setComplaints(data.data || []);
+        let headers = {};
+        if (auth.currentUser) {
+          const token = await auth.currentUser.getIdToken();
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+        
+        const response = await apiFetch(`/complaints?userId=${user.id || user.uid}`, {
+          headers
+        });
+        
+        // apiFetch returns the parsed json body
+        setComplaints(response.data || response || []);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -37,6 +41,7 @@ export default function CitizenTracking() {
       fetchComplaints();
     }
   }, [user]);
+
 
   const getStatusBadge = (status) => {
     switch(status?.toLowerCase()) {
