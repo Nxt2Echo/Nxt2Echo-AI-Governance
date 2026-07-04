@@ -34,8 +34,18 @@ export const ComplaintModel = {
       }
     }
     
-    const snapshot = await query.orderBy('createdAt', 'desc').get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
+    // Do not use .orderBy() in the DB query if we have filters, 
+    // as it requires composite indexes for every filter combination.
+    // We will sort the results in memory instead.
+    const snapshot = await query.get();
+    const complaints = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
+    
+    // Sort in memory by createdAt descending
+    return complaints.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
   },
 
   async update(id: string, data: Partial<Complaint>): Promise<Complaint | null> {

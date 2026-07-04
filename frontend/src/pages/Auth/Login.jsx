@@ -6,6 +6,7 @@ import { Mail, Lock, AlertCircle, ArrowRight } from "lucide-react";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("CITIZEN");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login, googleLogin } = useAuth();
@@ -17,10 +18,14 @@ export default function Login() {
     setLoading(true);
     
     try {
-      await login(email, password);
-      navigate("/");
+      const res = await login(email, password);
+      if (res.success) {
+        navigate(role === "CITIZEN" ? "/citizen" : "/");
+      } else {
+        setError(res.error || "Failed to sign in");
+      }
     } catch (err) {
-      setError("Failed to sign in");
+      setError("An unexpected error occurred");
     } finally {
       setLoading(false);
     }
@@ -30,10 +35,14 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await googleLogin();
-      navigate("/");
+      const res = await googleLogin(role);
+      if (res.success) {
+        navigate(role === "CITIZEN" ? "/citizen" : "/");
+      } else {
+        setError(res.error || "Failed to sign in with Google");
+      }
     } catch (err) {
-      setError("Failed to sign in with Google");
+      setError("An unexpected error occurred");
     } finally {
       setLoading(false);
     }
@@ -63,6 +72,23 @@ export default function Login() {
                 {error}
               </div>
             )}
+
+            <div className="flex bg-slate-950/50 p-1 rounded-lg border border-slate-800">
+              <button
+                type="button"
+                onClick={() => setRole("CITIZEN")}
+                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${role === "CITIZEN" ? "bg-primary text-white shadow-md" : "text-slate-400 hover:text-slate-200"}`}
+              >
+                Citizen
+              </button>
+              <button
+                type="button"
+                onClick={() => setRole("OFFICER")}
+                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${role === "OFFICER" ? "bg-primary text-white shadow-md" : "text-slate-400 hover:text-slate-200"}`}
+              >
+                Gov Officer
+              </button>
+            </div>
             
             <div>
               <label className="block text-sm font-medium text-slate-300">Email address</label>

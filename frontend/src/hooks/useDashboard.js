@@ -81,13 +81,13 @@ export function useDashboard() {
         ]);
 
         if (!cancelled) {
-          setStats(statsRes);
-          setTrendData(trendRes);
-          setCategoryData(categoryRes);
-          setDepartmentData(departmentRes);
-          setRecentComplaints(recentRes);
-          setAiInsights(insightsRes);
-          setActivityFeed(activityRes);
+          setStats(statsRes?.data || statsRes);
+          setTrendData(trendRes?.data || trendRes);
+          setCategoryData(categoryRes?.data || categoryRes);
+          setDepartmentData(departmentRes?.data || departmentRes);
+          setRecentComplaints(recentRes?.data || recentRes);
+          setAiInsights(insightsRes?.data || insightsRes);
+          setActivityFeed(activityRes?.data || activityRes);
         }
       } catch (err) {
         if (!cancelled) {

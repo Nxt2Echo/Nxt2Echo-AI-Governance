@@ -81,8 +81,15 @@ export class ComplaintController {
 
   static async getComplaints(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const filters = req.query;
-      const complaints = await ComplaintService.getComplaints(filters);
+      const { status, priority, category, userId } = req.query;
+      const dbFilters: Record<string, any> = {};
+      
+      if (status) dbFilters.status = status;
+      if (priority) dbFilters.severity = priority;
+      if (category) dbFilters.category = category;
+      if (userId) dbFilters.userId = userId;
+
+      const complaints = await ComplaintService.getComplaints(dbFilters);
       res.status(200).json({ data: complaints });
     } catch (error) {
       next(error);

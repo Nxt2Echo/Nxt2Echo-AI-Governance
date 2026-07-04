@@ -15,12 +15,18 @@ import { useAuth } from "../../contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-const menuItems = [
+const officerMenuItems = [
   { name: "Dashboard", path: "/", icon: LayoutDashboard },
   { name: "Complaints", path: "/complaints", icon: FileText, badge: "1.2k" },
   { name: "AI Analysis", path: "/analysis", icon: Brain, badge: "New" },
   { name: "Heatmap", path: "/heatmap", icon: Map },
   { name: "Reports", path: "/reports", icon: BarChart3 },
+  { name: "Settings", path: "/settings", icon: Settings },
+];
+
+const citizenMenuItems = [
+  { name: "Create Complaint", path: "/citizen", icon: FileText },
+  { name: "Track Complaints", path: "/citizen/tracking", icon: Map },
   { name: "Settings", path: "/settings", icon: Settings },
 ];
 
@@ -34,6 +40,8 @@ export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  
+  const menuItems = user?.role === "CITIZEN" ? citizenMenuItems : officerMenuItems;
 
   return (
     <aside className="w-64 bg-card border-r border-border flex flex-col shrink-0">
@@ -123,7 +131,9 @@ export default function Sidebar() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-foreground truncate">{user?.name || "Gov. Officer"}</p>
-            <p className="text-[10px] text-muted-foreground truncate">{user?.department || "BBMP"} — {user?.city || "Bengaluru"}</p>
+            <p className="text-[10px] text-muted-foreground truncate">
+              {user?.role === "CITIZEN" ? "Citizen Portal" : `${user?.department || "BBMP"} — ${user?.city || "Bengaluru"}`}
+            </p>
           </div>
           <ChevronRight size={12} className="text-muted-foreground" />
         </div>

@@ -242,8 +242,8 @@ export default function Settings() {
                 </CardHeader>
                 <CardContent className="p-4 pt-0 divide-y divide-border">
                   {[
-                    { key: "emailAlerts", label: "Email Notifications", desc: "officer@bbmp.gov.in" },
-                    { key: "smsAlerts", label: "SMS Notifications", desc: "+91 98765 43210" },
+                    { key: "emailAlerts", label: "Email Notifications", desc: profile.email || "officer@bbmp.gov.in" },
+                    { key: "smsAlerts", label: "SMS Notifications", desc: profile.phone || "+91 98765 43210" },
                   ].map(({ key, label, desc }) => (
                     <SettingRow key={key} label={label} description={desc}>
                       <Toggle

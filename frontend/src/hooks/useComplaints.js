@@ -49,10 +49,48 @@ export function useComplaints() {
         setTotalPages(Math.ceil(res.length / PAGE_SIZE));
         setCategories(["All", ...new Set(res.map((c) => c.category))]);
       } else {
-        setComplaints(res.data ?? []);
-        setTotal(res.total ?? 0);
-        setTotalPages(res.totalPages ?? 1);
-        if (res.categories) setCategories(["All", ...res.categories]);
+        let data = res.data ?? [];
+        
+        // Client-side search (since backend doesn't support full-text search yet)
+        if (search) {
+          const q = search.toLowerCase();
+          data = data.filter(
+            (c) =>
+              c.title?.toLowerCase().includes(q) ||
+              c.id?.toLowerCase().includes(q) ||
+              c.area?.toLowerCase().includes(q) ||
+              c.department?.toLowerCase().includes(q)
+          );
+        }
+
+        // Client-side sort
+        data.sort((a, b) => {
+          let av = a[sortField], bv = b[sortField];
+          if (typeof av === "string") {
+            av = av.toLowerCase();
+            bv = bv.toLowerCase();
+          }
+          if (av < bv) return sortDir === "asc" ? -1 : 1;
+          if (av > bv) return sortDir === "asc" ? 1 : -1;
+          return 0;
+        });
+
+        setTotal(res.total ?? data.length);
+        setTotalPages(res.totalPages ?? (Math.ceil(data.length / PAGE_SIZE) || 1));
+        
+        // Client-side pagination if backend didn't paginate
+        if (!res.totalPages) {
+          data = data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+        }
+        
+        setComplaints(data);
+        if (res.categories) {
+          setCategories(["All", ...res.categories]);
+        } else {
+          // Derive categories if backend didn't provide them
+          const derived = ["All", ...new Set((res.data || []).map((c) => c.category).filter(Boolean))];
+          setCategories(derived);
+        }
       }
     } catch (err) {
       console.warn("[useComplaints] API failed, performing client-side filter on fallback data.", err);
