@@ -342,6 +342,168 @@ class MockStorage {
 // Exports (Directly switchable)
 // ────────────────────────────────────────────────────────
 
-export const db = (useMock ? new MockDb() : admin.firestore()) as any;
+// ────────────────────────────────────────────────────────
+// Exports (Directly switchable with MongoDB persistence fallback)
+// ────────────────────────────────────────────────────────
+
+import { MongoClient } from 'mongodb';
+
+const MONGODB_URI = "mongodb+srv://nxt2echo:nxt2echo123@cluster0.p1b4d.mongodb.net/nxt2echo?retryWrites=true&w=majority";
+let mongoClient: MongoClient | null = null;
+let mongoDb: any = null;
+
+if (useMock) {
+  try {
+    mongoClient = new MongoClient(MONGODB_URI);
+    // Connect synchronously in the background
+    mongoClient.connect().then(() => {
+      mongoDb = mongoClient!.db('nxt2echo');
+      console.log('Connected to MongoDB Atlas successfully.');
+    }).catch(err => {
+      console.error('Failed to connect to MongoDB Atlas:', err.message);
+    });
+  } catch (e: any) {
+    console.error('MongoDB Atlas init error:', e.message);
+  }
+}
+
+// Implement MongoDB-backed Firestore Mock to persist complaints and users
+class MongoCollection {
+  name: string;
+  constructor(name: string) {
+    this.name = name;
+  }
+
+  async add(data: any) {
+    const id = 'mongo-id-' + Math.random().toString(36).substring(2, 10);
+    const docRef = this.doc(id);
+    await docRef.set(data);
+    return docRef;
+  }
+
+  doc(id: string) {
+    return {
+      id,
+      get: async () => {
+        let data = null;
+        if (mongoDb) {
+          data = await mongoDb.collection(this.name).findOne({ _id: id });
+          if (data) {
+            delete data._id;
+          }
+        }
+        // Fallback to memory
+        if (!data) {
+          data = dbStore.dataStore[this.name]?.[id];
+        }
+        return new MockDoc(id, data, !!data);
+      },
+      set: async (data: any) => {
+        if (mongoDb) {
+          await mongoDb.collection(this.name).updateOne(
+            { _id: id },
+            { $set: data },
+            { upsert: true }
+          );
+        }
+        // Sync memory
+        if (!dbStore.dataStore[this.name]) dbStore.dataStore[this.name] = {};
+        dbStore.dataStore[this.name][id] = { ...data };
+      },
+      update: async (data: any) => {
+        if (mongoDb) {
+          await mongoDb.collection(this.name).updateOne(
+            { _id: id },
+            { $set: data }
+          );
+        }
+        // Sync memory
+        if (!dbStore.dataStore[this.name]) dbStore.dataStore[this.name] = {};
+        const current = dbStore.dataStore[this.name][id] || {};
+        dbStore.dataStore[this.name][id] = { ...current, ...data };
+      },
+      delete: async () => {
+        if (mongoDb) {
+          await mongoDb.collection(this.name).deleteOne({ _id: id });
+        }
+        if (dbStore.dataStore[this.name]) {
+          delete dbStore.dataStore[this.name][id];
+        }
+      }
+    };
+  }
+
+  where(field: string, op: string, val: any) {
+    return {
+      limit: (n: number) => this.whereQuery(field, val, n),
+      get: () => this.whereQuery(field, val)
+    };
+  }
+
+  private async whereQuery(field: string, val: any, limitVal = 0) {
+    let list: any[] = [];
+    if (mongoDb) {
+      const cursor = mongoDb.collection(this.name).find({ [field]: val });
+      if (limitVal > 0) cursor.limit(limitVal);
+      const docs = await cursor.toArray();
+      list = docs.map((doc: any) => {
+        const id = doc._id;
+        delete doc._id;
+        return new MockDoc(id, doc, true);
+      });
+    }
+    
+    if (list.length === 0) {
+      const allDocs = Object.entries(dbStore.dataStore[this.name] || {}).map(
+        ([id, data]) => new MockDoc(id, data, true)
+      );
+      list = allDocs.filter(doc => {
+        const data = doc.data();
+        return data && data[field] === val;
+      });
+      if (limitVal > 0) {
+        list = list.slice(0, limitVal);
+      }
+    }
+
+    return {
+      docs: list,
+      empty: list.length === 0
+    };
+  }
+
+  async get() {
+    let list: any[] = [];
+    if (mongoDb) {
+      const docs = await mongoDb.collection(this.name).find({}).toArray();
+      list = docs.map((doc: any) => {
+        const id = doc._id;
+        delete doc._id;
+        return new MockDoc(id, doc, true);
+      });
+    }
+    
+    if (list.length === 0) {
+      list = Object.entries(dbStore.dataStore[this.name] || {}).map(
+        ([id, data]) => new MockDoc(id, data, true)
+      );
+    }
+
+    return {
+      docs: list,
+      empty: list.length === 0
+    };
+  }
+}
+
+class MongoDbWrapper {
+  collection(name: string) {
+    return new MongoCollection(name);
+  }
+}
+
+const dbStore = new MockDb();
+
+export const db = (useMock ? new MongoDbWrapper() : admin.firestore()) as any;
 export const auth = (useMock ? new MockAuth() : admin.auth()) as any;
 export const storage = (useMock ? new MockStorage() : admin.storage()) as any;
