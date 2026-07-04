@@ -19,7 +19,17 @@ async function apiFetch(path, options = {}) {
   const url = `${BASE_URL}${path}`;
   let token = null;
   
-  if (auth?.currentUser) {
+  // Prefer real JWT stored from our backend auth
+  const stored = localStorage.getItem('nxt2echo_user');
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      token = parsed.token || null;
+    } catch {}
+  }
+  
+  // Fallback to Firebase mock token
+  if (!token && auth?.currentUser) {
     token = await auth.currentUser.getIdToken();
   }
 

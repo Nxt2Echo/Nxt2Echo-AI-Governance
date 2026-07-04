@@ -13,15 +13,20 @@ import ForgotPassword from "../pages/Auth/ForgotPassword";
 import CitizenPortal from "../pages/CitizenPortal/index";
 import CitizenTracking from "../pages/CitizenPortal/Tracking";
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to={user.role === 'CITIZEN' ? '/citizen' : '/'} replace />;
+  }
   return children;
 };
 
 const PublicRoute = ({ children }) => {
   const { user } = useAuth();
-  if (user) return <Navigate to="/" replace />;
+  if (user) {
+    return <Navigate to={user.role === 'CITIZEN' ? '/citizen' : '/'} replace />;
+  }
   return children;
 };
 
@@ -35,16 +40,16 @@ export default function AppRoutes(){
         <Route path="/forgot-password" element={<PublicRoute><ForgotPassword/></PublicRoute>} />
 
         {/* Protected Routes */}
-        <Route path="/" element={<ProtectedRoute><Dashboard/></ProtectedRoute>}/>
-        <Route path="/complaints" element={<ProtectedRoute><Complaints/></ProtectedRoute>}/>
-        <Route path="/analysis" element={<ProtectedRoute><Analytics /></ProtectedRoute>} /> 
-        <Route path="/heatmap" element={<ProtectedRoute><Heatmap/></ProtectedRoute>}/>
-        <Route path="/reports" element={<ProtectedRoute><Reports/></ProtectedRoute>}/>
-        <Route path="/settings" element={<ProtectedRoute><Settings/></ProtectedRoute>}/>
+        <Route path="/" element={<ProtectedRoute allowedRoles={["OFFICER"]}><Dashboard/></ProtectedRoute>}/>
+        <Route path="/complaints" element={<ProtectedRoute allowedRoles={["OFFICER"]}><Complaints/></ProtectedRoute>}/>
+        <Route path="/analysis" element={<ProtectedRoute allowedRoles={["OFFICER"]}><Analytics /></ProtectedRoute>} /> 
+        <Route path="/heatmap" element={<ProtectedRoute allowedRoles={["OFFICER"]}><Heatmap/></ProtectedRoute>}/>
+        <Route path="/reports" element={<ProtectedRoute allowedRoles={["OFFICER"]}><Reports/></ProtectedRoute>}/>
+        <Route path="/settings" element={<ProtectedRoute allowedRoles={["OFFICER", "CITIZEN"]}><Settings/></ProtectedRoute>}/>
         
         {/* Citizen Routes */}
-        <Route path="/citizen" element={<ProtectedRoute><CitizenPortal/></ProtectedRoute>} />
-        <Route path="/citizen/tracking" element={<ProtectedRoute><CitizenTracking/></ProtectedRoute>} />
+        <Route path="/citizen" element={<ProtectedRoute allowedRoles={["CITIZEN"]}><CitizenPortal/></ProtectedRoute>} />
+        <Route path="/citizen/tracking" element={<ProtectedRoute allowedRoles={["CITIZEN"]}><CitizenTracking/></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

@@ -20,12 +20,12 @@ router.post(
 );
 
 // Gemini utility route (POST — must be before PUT /:id)
-router.post('/analyze', authorize([Role.ADMIN]), ComplaintController.analyze);
+router.post('/analyze', authorize([Role.ADMIN, Role.OFFICER]), ComplaintController.analyze);
 
 router.get('/', ComplaintController.getComplaints);
 
 // Admin stats — must be before GET /:id so Express does not capture 'dashboard' as an id param
-router.get('/dashboard/stats', authorize([Role.ADMIN]), ComplaintController.getDashboardStats);
+router.get('/dashboard/stats', authorize([Role.ADMIN, Role.OFFICER]), ComplaintController.getDashboardStats);
 
 // Heatmap — must be before GET /:id so Express does not capture 'heatmap' as an id param
 router.get('/heatmap', ComplaintController.getHeatmapData);
@@ -45,7 +45,7 @@ router.put(
 
 router.delete(
   '/:id',
-  authorize([Role.ADMIN]),
+  authorize([Role.ADMIN, Role.OFFICER]),
   ComplaintController.deleteComplaint
 );
 

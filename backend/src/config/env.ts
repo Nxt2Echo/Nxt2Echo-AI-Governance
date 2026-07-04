@@ -4,8 +4,6 @@ import dotenv from 'dotenv';
 // Load .env file
 dotenv.config();
 
-// Since we're trying to keep things light, we can just use simple checks or a library like zod if requested.
-// The prompt didn't ask for zod, but it's good practice. I'll stick to basic validation for zero dependency overhead beyond what was requested.
 export const env = {
   PORT: process.env.PORT || 5000,
   JWT_SECRET: process.env.JWT_SECRET || 'fallback_secret_key',
@@ -15,6 +13,14 @@ export const env = {
     PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
   },
   GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+  SMTP: {
+    HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
+    PORT: parseInt(process.env.SMTP_PORT || '587', 10),
+    SECURE: process.env.SMTP_SECURE === 'true',
+    USER: process.env.SMTP_USER || '',
+    PASS: process.env.SMTP_PASS || '',
+    FROM: process.env.EMAIL_FROM || 'Nxt2Echo <noreply@nxt2echo.com>',
+  },
 };
 
 // Validate required variables

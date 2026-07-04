@@ -22,15 +22,16 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     }
 
     try {
-      // Verify as Firebase ID Token
+      // Verify as Firebase ID Token (or Mock Token)
       const decodedToken = await auth.verifyIdToken(token);
       let user = await UserModel.findById(decodedToken.uid);
       if (!user) {
         // Auto-create user if they logged in via Google Auth but don't exist in Firestore
+        const role = (decodedToken as any).role || Role.CITIZEN;
         await UserModel.create(decodedToken.uid, {
           email: decodedToken.email || '',
           name: decodedToken.name || 'Citizen',
-          role: Role.CITIZEN
+          role: role as Role
         });
         user = await UserModel.findById(decodedToken.uid);
       }

@@ -18,11 +18,12 @@ export default function Login() {
     setLoading(true);
     
     try {
-      const res = await login(email, password);
+      const res = await login(email, password, role);
       if (res.success) {
-        navigate(role === "CITIZEN" ? "/citizen" : "/");
+        const userRole = res.user?.role || role;
+        navigate(userRole === "CITIZEN" ? "/citizen" : "/");
       } else {
-        setError(res.error || "Failed to sign in");
+        setError(res.error || "Failed to sign in. Check your email and password.");
       }
     } catch (err) {
       setError("An unexpected error occurred");

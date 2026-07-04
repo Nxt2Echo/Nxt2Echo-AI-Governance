@@ -1,15 +1,47 @@
-import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+// Mock Firebase Service for Local Development
+export const app = {};
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
+class MockAuth {
+  currentUser = null;
+  listeners = [];
 
-export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
+  constructor() {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      this.currentUser = {
+        uid: parsed.id || "mock-uid-123",
+        displayName: parsed.name || "Mock Citizen",
+        email: parsed.email || "citizen@example.com",
+        photoURL: parsed.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150",
+        getIdToken: async () => `mock-jwt-token-${parsed.email ? parsed.email.split('@')[0] : 'citizen'}`
+      };
+    }
+  }
+
+  onAuthStateChanged(callback) {
+    this.listeners.push(callback);
+    callback(this.currentUser);
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== callback);
+    };
+  }
+
+  updateCurrentUser(user) {
+    if (user) {
+      this.currentUser = {
+        uid: user.id,
+        displayName: user.name,
+        email: user.email,
+        photoURL: user.avatar,
+        getIdToken: async () => `mock-jwt-token-${user.email ? user.email.split('@')[0] : 'user'}`
+      };
+    } else {
+      this.currentUser = null;
+    }
+    this.listeners.forEach(callback => callback(this.currentUser));
+  }
+}
+
+export const auth = new MockAuth();
+export const googleProvider = {};
