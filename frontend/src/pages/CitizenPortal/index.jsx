@@ -221,13 +221,13 @@ export default function CitizenPortal() {
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                 >
-                  <option value="Water Supply">Water Supply</option>
-                  <option value="Garbage">Garbage</option>
-                  <option value="Road Damage">Road Damage</option>
-                  <option value="Street Lights">Street Lights</option>
-                  <option value="Drainage">Drainage</option>
-                  <option value="Air Pollution">Air Pollution</option>
-                  <option value="Flood">Flood</option>
+                  <option value="WaterSupply">Water Supply</option>
+                  <option value="Sanitation">Sanitation & Garbage</option>
+                  <option value="Infrastructure">Roads & Infrastructure</option>
+                  <option value="Electricity">Street Lights & Electricity</option>
+                  <option value="Drainage">Drainage & Sewage</option>
+                  <option value="Environment">Air & Environment</option>
+                  <option value="PublicSafety">Public Safety</option>
                   <option value="Others">Others</option>
                 </select>
               </div>
