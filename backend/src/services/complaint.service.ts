@@ -74,6 +74,15 @@ export class ComplaintService {
   }
 
   static async deleteComplaint(id: string): Promise<boolean> {
+    const complaint = await ComplaintModel.findById(id);
+    if (!complaint) return false;
+
+    const ONE_HOUR = 60 * 60 * 1000;
+    const createdAtTime = new Date(complaint.createdAt).getTime();
+    if (Date.now() - createdAtTime < ONE_HOUR) {
+      throw new Error('Cannot delete a new complaint. All new complaints must be stored for at least 1 hour.');
+    }
+
     return await ComplaintModel.delete(id);
   }
 }

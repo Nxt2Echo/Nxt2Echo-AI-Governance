@@ -7,7 +7,7 @@ import {
   MapPin, Flame, Droplets, Zap, Trash2, ShieldAlert,
   RefreshCw, Sparkles
 } from "lucide-react";
-import { apiFetch } from "@/services/api";
+import { apiFetch, safeParseDate, getSyncedNow } from "@/services/api";
 
 const STORAGE_KEY = "nxt2echo_my_complaints";
 const POLL_INTERVAL = 30000; // 30 seconds
@@ -75,16 +75,19 @@ function SkeletonCard() {
 function ComplaintCard({ complaint }) {
   const severityClass = SEVERITY_COLORS[complaint.severity] || SEVERITY_COLORS.Medium;
   const icon = CATEGORY_ICONS[complaint.category] || <FileText size={13} />;
-  const isNew = complaint._local || (complaint.createdAt && (Date.now() - new Date(complaint.createdAt).getTime()) < 60 * 60 * 1000);
+  
+  const compDate = complaint.createdAt ? safeParseDate(complaint.createdAt) : null;
+  const isNew = complaint._local || (compDate && (getSyncedNow() - compDate.getTime()) >= -60000 && (getSyncedNow() - compDate.getTime()) < 60 * 60 * 1000);
 
   const formatDate = (d) => {
     if (!d) return "";
     try {
-      const diff = Date.now() - new Date(d).getTime();
+      const parsed = safeParseDate(d);
+      const diff = getSyncedNow() - parsed.getTime();
       if (diff < 60000) return "Just now";
-      if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-      if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-      return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+      if (diff < 3600000) return `${Math.max(0, Math.floor(diff / 60000))}m ago`;
+      if (diff < 86400000) return `${Math.max(0, Math.floor(diff / 3600000))}h ago`;
+      return parsed.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
     } catch { return d; }
   };
 
@@ -145,7 +148,7 @@ function mergeComplaints(apiList, userId) {
     const apiIds = new Set(apiList.map(c => c.id));
     const extraLocal = userLocal.filter(c => !apiIds.has(c.id));
     return [...extraLocal, ...apiList].sort((a, b) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      safeParseDate(b.createdAt).getTime() - safeParseDate(a.createdAt).getTime()
     );
   } catch {
     return apiList;
@@ -191,10 +194,10 @@ export default function CitizenTracking() {
     return () => clearInterval(pollerRef.current);
   }, [loadComplaints]);
 
-  const now = Date.now();
+  const now = getSyncedNow();
   const ONE_HOUR = 60 * 60 * 1000;
-  const recentComplaints = complaints.filter(c => now - new Date(c.createdAt).getTime() < ONE_HOUR);
-  const olderComplaints = complaints.filter(c => now - new Date(c.createdAt).getTime() >= ONE_HOUR);
+  const recentComplaints = complaints.filter(c => now - safeParseDate(c.createdAt).getTime() < ONE_HOUR);
+  const olderComplaints = complaints.filter(c => now - safeParseDate(c.createdAt).getTime() >= ONE_HOUR);
 
   return (
     <DashboardLayout>

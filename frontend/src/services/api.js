@@ -9,6 +9,36 @@ import { auth } from "../lib/firebase";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+let serverOffset = 0;
+
+/**
+ * Gets the current timestamp synchronized with the server's clock.
+ * @returns {number} Unix epoch millisecond timestamp.
+ */
+export function getSyncedNow() {
+  return Date.now() + serverOffset;
+}
+
+/**
+ * Safely parses various date formats (strings, timestamps, Firestore objects)
+ * into a standard JS Date object. Returns a fallback date instead of throwing.
+ * @param {any} dateVal
+ * @returns {Date}
+ */
+export function safeParseDate(dateVal) {
+  if (!dateVal) return new Date();
+  if (dateVal instanceof Date) return dateVal;
+  if (typeof dateVal === "string") return new Date(dateVal);
+  if (typeof dateVal === "number") return new Date(dateVal);
+  if (dateVal._seconds !== undefined) return new Date(dateVal._seconds * 1000);
+  if (dateVal.seconds !== undefined) return new Date(dateVal.seconds * 1000);
+  try {
+    const d = new Date(dateVal);
+    if (!isNaN(d.getTime())) return d;
+  } catch {}
+  return new Date();
+}
+
 /**
  * Core fetch wrapper — throws a structured error on non-2xx responses.
  * @param {string} path  - API path (e.g. "/complaints")
@@ -48,6 +78,16 @@ export async function apiFetch(path, options = {}) {
     headers,
   });
 
+  const serverDateStr = response.headers.get("Date");
+  if (serverDateStr) {
+    try {
+      const serverTime = new Date(serverDateStr).getTime();
+      if (!isNaN(serverTime)) {
+        serverOffset = serverTime - Date.now();
+      }
+    } catch {}
+  }
+
   if (!response.ok) {
     const message = `API Error: ${response.status} ${response.statusText} — ${url}`;
     throw new Error(message);
@@ -68,7 +108,7 @@ export async function apiFetch(path, options = {}) {
         area: c.ward || c.area || "Unknown",
         priority: c.severity || c.priority || "Medium",
         aiScore: c.priorityScore || c.aiScore || 0,
-        date: c.createdAt ? new Date(c.createdAt).toISOString().split("T")[0] : c.date,
+        date: c.createdAt ? safeParseDate(c.createdAt).toISOString().split("T")[0] : c.date,
         department: c.department || mapCategoryToDept[c.category] || "BBMP"
       };
     };

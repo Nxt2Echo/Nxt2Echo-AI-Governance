@@ -11,10 +11,11 @@ import {
 import {
   Search, Filter, FileText, ChevronLeft, ChevronRight,
   ArrowUpDown, MapPin, Building2, Calendar, Brain,
-  Sparkles, Clock, AlertTriangle, RefreshCw
+  Sparkles, Clock, RefreshCw, Droplets, Flame, Zap,
+  Trash2, Wind, ShieldAlert, CheckCircle2
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { apiFetch } from "@/services/api";
+import { useState, useEffect, useCallback } from "react";
+import { apiFetch, safeParseDate, getSyncedNow } from "@/services/api";
 
 const statusVariant = {
   Critical: "critical", "In Progress": "info", Pending: "warning", Resolved: "success",
@@ -23,22 +24,29 @@ const priorityVariant = {
   Critical: "critical", High: "high", Medium: "medium", Low: "low",
 };
 
+const CATEGORY_META = {
+  "Water Supply":   { icon: "💧", dept: "BWSSB", color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
+  "Garbage":        { icon: "🗑️", dept: "BBMP",  color: "text-green-400 bg-green-500/10 border-green-500/20" },
+  "Road Damage":    { icon: "🛣️", dept: "PWD",   color: "text-orange-400 bg-orange-500/10 border-orange-500/20" },
+  "Street Lights":  { icon: "💡", dept: "BESCOM",color: "text-yellow-400 bg-yellow-500/10 border-yellow-500/20" },
+  "Drainage":       { icon: "🌊", dept: "BBMP",  color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20" },
+  "Air Pollution":  { icon: "🌫️", dept: "KSPCB", color: "text-purple-400 bg-purple-500/10 border-purple-500/20" },
+  "Flood":          { icon: "🌧️", dept: "BBMP",  color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20" },
+  "Others":         { icon: "📋", dept: "BBMP",  color: "text-slate-400 bg-slate-500/10 border-slate-500/20" },
+};
+
 function TableSkeleton() {
   return (
     <>
       {Array.from({ length: 8 }).map((_, i) => (
         <TableRow key={i}>
           <TableCell><Skeleton className="h-3 w-16" /></TableCell>
-          <TableCell>
-            <Skeleton className="h-3 w-36 mb-1" />
-            <Skeleton className="h-2 w-24" />
-          </TableCell>
+          <TableCell><Skeleton className="h-3 w-36 mb-1" /><Skeleton className="h-2 w-24" /></TableCell>
           <TableCell className="hidden md:table-cell"><Skeleton className="h-3 w-20" /></TableCell>
           <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
           <TableCell className="hidden lg:table-cell"><Skeleton className="h-3 w-20" /></TableCell>
           <TableCell><Skeleton className="h-5 w-16" /></TableCell>
           <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-14" /></TableCell>
-          <TableCell className="hidden xl:table-cell"><Skeleton className="h-2 w-16" /></TableCell>
           <TableCell className="hidden md:table-cell"><Skeleton className="h-3 w-20" /></TableCell>
         </TableRow>
       ))}
@@ -46,170 +54,179 @@ function TableSkeleton() {
   );
 }
 
+const ONE_HOUR = 60 * 60 * 1000;
+
+function isWithinHour(dateStr) {
+  if (!dateStr) return false;
+  try {
+    const d = safeParseDate(dateStr);
+    const diff = getSyncedNow() - d.getTime();
+    // Allow up to 1 minute of lag buffer (negative diff)
+    return diff >= -60000 && diff < ONE_HOUR;
+  } catch { return false; }
+}
+
+function relativeTime(dateStr) {
+  if (!dateStr) return "";
+  try {
+    const d = safeParseDate(dateStr);
+    const diff = getSyncedNow() - d.getTime();
+    if (diff < 60000) return "Just now";
+    if (diff < 3600000) return `${Math.max(0, Math.floor(diff / 60000))}m ago`;
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  } catch { return dateStr; }
+}
+
 export default function Complaints() {
   const {
-    complaints,
-    total,
-    totalPages,
-    categories,
-    loading,
-    error,
+    complaints, total, totalPages, categories,
+    loading, error,
     search, setSearch,
     statusFilter, setStatusFilter,
     priorityFilter, setPriorityFilter,
     categoryFilter, setCategoryFilter,
     page, setPage,
-    sortField,
-    sortDir,
-    toggleSort,
-    resetPage,
-    PAGE_SIZE,
+    sortField, sortDir, toggleSort,
+    resetPage, PAGE_SIZE,
+    refreshComplaints,
   } = useComplaints();
 
-  // State to hold and poll complaints from the last hour
-  const [newHourComplaints, setNewHourComplaints] = useState([]);
-  const [isPolling, setIsPolling] = useState(false);
+  const [allFetched, setAllFetched] = useState([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState(null);
 
-  // Poll new complaints (under 1 hour) in real-time
-  const fetchNewHourComplaints = async () => {
+  const fetchAll = useCallback(async () => {
     try {
-      setIsPolling(true);
-      // Fetch all complaints from backend (limit 50 to search for recent ones)
-      const res = await apiFetch("/complaints?limit=50");
+      setIsSyncing(true);
+      const res = await apiFetch("/complaints?limit=200");
       const list = Array.isArray(res) ? res : (res?.data ?? []);
-      
-      const ONE_HOUR = 60 * 60 * 1000;
-      const now = Date.now();
-      
-      // Filter list to get complaints submitted in the last 1 hour
-      const filtered = list.filter(c => {
-        const time = c.createdAt ? new Date(c.createdAt).getTime() : 0;
-        return now - time < ONE_HOUR;
-      });
-      
-      setNewHourComplaints(filtered);
+      setAllFetched(list);
+      setLastSync(new Date());
+      // Silently refresh the main table data to keep it in sync in real time
+      refreshComplaints(true);
     } catch (err) {
-      console.warn("Failed to fetch real-time hour complaints:", err);
+      console.warn("Failed to fetch all complaints:", err);
     } finally {
-      setIsPolling(false);
+      setIsSyncing(false);
     }
-  };
+  }, [refreshComplaints]);
 
   useEffect(() => {
-    fetchNewHourComplaints();
-    // Poll every 15 seconds to keep it truly real-time for government users
-    const interval = setInterval(fetchNewHourComplaints, 15000);
+    fetchAll();
+    const interval = setInterval(fetchAll, 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchAll]);
 
-  const formatRelativeTime = (dateStr) => {
-    if (!dateStr) return "";
-    try {
-      const diff = Date.now() - new Date(dateStr).getTime();
-      if (diff < 60000) return "Just now";
-      return `${Math.floor(diff / 60000)}m ago`;
-    } catch {
-      return dateStr;
-    }
-  };
+  // Split into last-hour and older
+  const lastHourComplaints = allFetched.filter(c => isWithinHour(c.createdAt));
+  const olderComplaints = allFetched.filter(c => !isWithinHour(c.createdAt));
 
   return (
     <DashboardLayout>
       <div className="space-y-5">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h1 className="text-xl font-bold text-foreground tracking-tight">Complaint Management</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              All citizen complaints · Bengaluru, KA
-            </p>
+            <p className="text-sm text-muted-foreground mt-0.5">All citizen complaints · Bengaluru, KA</p>
           </div>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <RefreshCw size={12} className={isPolling ? "animate-spin" : ""} />
-              {isPolling ? "Syncing..." : "Live"}
-            </span>
-            <span>·</span>
+            <button onClick={fetchAll} className="flex items-center gap-1 hover:text-foreground transition-colors">
+              <RefreshCw size={12} className={isSyncing ? "animate-spin" : ""} />
+              {isSyncing ? "Syncing..." : lastSync ? `Updated ${relativeTime(lastSync)}` : "Live"}
+            </button>
+            <span className="text-border">·</span>
+            <FileText size={13} />
             <span>{total.toLocaleString()} total</span>
           </div>
         </div>
 
-        {/* 🚨 NEW COMPLAINTS SECTION (LAST 1 HOUR ONLY) */}
-        <Card className={`border-l-4 border-l-primary border-border bg-gradient-to-r from-primary/5 to-transparent shadow-sm transition-all duration-300 ${newHourComplaints.length > 0 ? "opacity-100 scale-100" : "opacity-70"}`}>
+        {/* ─── NEW COMPLAINTS (LAST 1 HOUR) ─── */}
+        <Card className="border-l-4 border-l-primary bg-gradient-to-br from-primary/5 via-background to-background shadow-sm">
           <CardHeader className="pb-2 pt-4 px-5">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <Sparkles size={16} className="text-primary animate-pulse" />
-                <CardTitle className="text-sm font-bold text-foreground">
-                  New Complaints (Last Hour)
+                <CardTitle className="text-sm font-bold">
+                  🕐 New Complaints — Last 1 Hour
                 </CardTitle>
-                {newHourComplaints.length > 0 && (
-                  <Badge className="bg-primary text-primary-foreground animate-bounce px-1.5 py-0.5 text-[10px]">
-                    {newHourComplaints.length} new
-                  </Badge>
+                {lastHourComplaints.length > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary text-primary-foreground animate-pulse">
+                    {lastHourComplaints.length} NEW
+                  </span>
                 )}
               </div>
               <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
-                <Clock size={10} /> Auto-polls every 15s
+                <Clock size={10} /> Auto-refreshes every 15s
               </span>
             </div>
           </CardHeader>
-          <CardContent className="px-5 pb-4">
-            {newHourComplaints.length === 0 ? (
-              <div className="text-center py-4 text-xs text-muted-foreground/80 flex items-center justify-center gap-1.5">
-                <Clock size={12} className="opacity-50" /> No complaints registered in the last hour.
+          <CardContent className="px-5 pb-5">
+            {isSyncing && lastHourComplaints.length === 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
+                {[0,1].map(i => <Skeleton key={i} className="h-24 w-full rounded-lg" />)}
+              </div>
+            ) : lastHourComplaints.length === 0 ? (
+              <div className="text-center py-6 text-xs text-muted-foreground/70 flex items-center justify-center gap-1.5">
+                <Clock size={14} className="opacity-40" />
+                No new complaints in the last hour. New submissions appear here instantly.
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
-                {newHourComplaints.map((c) => (
-                  <div
-                    key={c.id}
-                    className="p-3.5 rounded-lg bg-card/45 border border-primary/20 hover:border-primary/50 transition-all duration-200 shadow-sm flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="flex justify-between items-start gap-2 mb-1.5">
-                        <h4 className="text-xs font-semibold text-foreground truncate max-w-[200px]">
-                          {c.title}
-                        </h4>
-                        <Badge className="bg-primary/20 text-primary hover:bg-primary/30 border-0 text-[9px] px-1.5 py-0">
-                          {formatRelativeTime(c.createdAt)}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mt-1">
+                {lastHourComplaints.map((c) => {
+                  const meta = CATEGORY_META[c.category] || CATEGORY_META["Others"];
+                  return (
+                    <div
+                      key={c.id}
+                      className="p-4 rounded-xl bg-card border border-primary/20 hover:border-primary/50 hover:shadow-md transition-all duration-200 flex flex-col gap-2"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`text-sm px-1.5 py-0.5 rounded-md border ${meta.color} shrink-0`}>
+                            {meta.icon}
+                          </span>
+                          <p className="text-xs font-semibold text-foreground truncate">{c.title}</p>
+                        </div>
+                        <span className="text-[10px] text-primary/80 shrink-0 font-medium bg-primary/10 px-1.5 py-0.5 rounded">
+                          {relativeTime(c.createdAt)}
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-muted-foreground line-clamp-2">{c.description}</p>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-border/50 text-[10px] text-muted-foreground gap-1 flex-wrap">
+                        <span className="flex items-center gap-1">
+                          <MapPin size={9} />
+                          {c.ward || c.area || "—"}
+                        </span>
+                        <span className="font-mono text-[9px] opacity-60">#{(c.id || "").slice(-6).toUpperCase()}</span>
+                        <Badge
+                          variant={priorityVariant[c.priority || c.severity] ?? "outline"}
+                          className="text-[8px] px-1 py-0"
+                        >
+                          {c.priority || c.severity || "—"}
                         </Badge>
                       </div>
-                      <p className="text-[11px] text-muted-foreground line-clamp-2 mb-3">
-                        {c.description}
-                      </p>
                     </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-border/50 text-[10px] text-muted-foreground">
-                      <span className="flex items-center gap-1 font-mono text-[9px]">
-                        #{(c.id || "").slice(-6).toUpperCase()}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin size={9} /> {c.ward || c.area}
-                      </span>
-                      <Badge variant={priorityVariant[c.priority] ?? "outline"} className="text-[8px] px-1 py-0 border-0">
-                        {c.priority || c.severity}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Error banner */}
+        {/* ─── ERROR BANNER ─── */}
         {error && (
           <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-xs text-destructive flex items-center gap-2">
             <Brain size={13} /> Could not load complaints — {error}
           </div>
         )}
 
-        {/* Filters */}
+        {/* ─── FILTERS ─── */}
         <Card className="border-border">
           <CardHeader className="pb-2 pt-3 px-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
-              <Filter size={12} /> Filters
+              <Filter size={12} /> Filters — All Complaints
             </div>
           </CardHeader>
           <CardContent className="px-4 pb-3 flex flex-wrap gap-2">
@@ -242,7 +259,7 @@ export default function Complaints() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="w-36">
+            <div className="w-40">
               <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); resetPage(); }}>
                 <SelectTrigger className="h-8 text-xs">{categoryFilter}</SelectTrigger>
                 <SelectContent>
@@ -255,39 +272,38 @@ export default function Complaints() {
           </CardContent>
         </Card>
 
-        {/* Table */}
+        {/* ─── ALL COMPLAINTS TABLE ─── */}
         <Card className="border-border">
+          <CardHeader className="pb-2 pt-3 px-4 border-b border-border">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+              <FileText size={12} /> All Complaints History
+              {!loading && (
+                <span className="ml-auto text-[10px] text-muted-foreground/60">
+                  Showing {Math.min((page - 1) * PAGE_SIZE + 1, total)}–{Math.min(page * PAGE_SIZE, total)} of {total}
+                </span>
+              )}
+            </div>
+          </CardHeader>
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-24">
-                  <button onClick={() => toggleSort("id")} className="flex items-center gap-1 hover:text-foreground">
-                    ID <ArrowUpDown size={10} />
-                  </button>
+                  <button onClick={() => toggleSort("id")} className="flex items-center gap-1 hover:text-foreground text-xs">ID <ArrowUpDown size={10} /></button>
                 </TableHead>
                 <TableHead>
-                  <button onClick={() => toggleSort("title")} className="flex items-center gap-1 hover:text-foreground">
-                    Complaint <ArrowUpDown size={10} />
-                  </button>
+                  <button onClick={() => toggleSort("title")} className="flex items-center gap-1 hover:text-foreground text-xs">Complaint <ArrowUpDown size={10} /></button>
                 </TableHead>
-                <TableHead className="hidden md:table-cell">Area</TableHead>
-                <TableHead className="hidden lg:table-cell">Department</TableHead>
-                <TableHead className="hidden lg:table-cell">Category</TableHead>
+                <TableHead className="hidden md:table-cell text-xs">Area</TableHead>
+                <TableHead className="hidden lg:table-cell text-xs">Dept</TableHead>
+                <TableHead className="hidden lg:table-cell text-xs">Category</TableHead>
                 <TableHead>
-                  <button onClick={() => toggleSort("status")} className="flex items-center gap-1 hover:text-foreground">
-                    Status <ArrowUpDown size={10} />
-                  </button>
+                  <button onClick={() => toggleSort("status")} className="flex items-center gap-1 hover:text-foreground text-xs">Status <ArrowUpDown size={10} /></button>
                 </TableHead>
                 <TableHead className="hidden sm:table-cell">
-                  <button onClick={() => toggleSort("priority")} className="flex items-center gap-1 hover:text-foreground">
-                    Priority <ArrowUpDown size={10} />
-                  </button>
+                  <button onClick={() => toggleSort("priority")} className="flex items-center gap-1 hover:text-foreground text-xs">Priority <ArrowUpDown size={10} /></button>
                 </TableHead>
-                <TableHead className="hidden xl:table-cell">AI Score</TableHead>
                 <TableHead className="hidden md:table-cell">
-                  <button onClick={() => toggleSort("date")} className="flex items-center gap-1 hover:text-foreground">
-                    Date <ArrowUpDown size={10} />
-                  </button>
+                  <button onClick={() => toggleSort("date")} className="flex items-center gap-1 hover:text-foreground text-xs">Date <ArrowUpDown size={10} /></button>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -296,64 +312,60 @@ export default function Complaints() {
                 <TableSkeleton />
               ) : complaints.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-12 text-muted-foreground text-sm">
+                  <TableCell colSpan={8} className="text-center py-12 text-muted-foreground text-sm">
                     No complaints match your filters.
                   </TableCell>
                 </TableRow>
               ) : (
-                complaints.map((c) => (
-                  <TableRow key={c.id} className="cursor-pointer">
-                    <TableCell className="font-mono text-xs text-muted-foreground">{c.id}</TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="text-xs font-medium text-foreground truncate max-w-[180px]">{c.title}</p>
-                        <p className="text-[10px] text-muted-foreground line-clamp-1">{c.description}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <MapPin size={10} />
-                        {c.area}
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      <div className="flex items-center gap-1 text-xs">
-                        <Building2 size={10} className="text-muted-foreground" />
-                        <Badge variant="outline" className="text-[10px]">{c.department}</Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      <span className="text-[10px] text-muted-foreground">{c.category}</span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={statusVariant[c.status] ?? "outline"} className="text-[10px]">
-                        {c.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge variant={priorityVariant[c.priority] ?? "outline"} className="text-[10px]">
-                        {c.priority}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden xl:table-cell">
-                      <div className="flex items-center gap-1.5">
-                        <div className="h-1.5 w-12 rounded-full bg-secondary overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-primary"
-                            style={{ width: `${c.aiScore}%` }}
-                          />
+                complaints.map((c) => {
+                  const meta = CATEGORY_META[c.category] || CATEGORY_META["Others"];
+                  const isNew = isWithinHour(c.createdAt);
+                  return (
+                    <TableRow key={c.id} className={`cursor-pointer ${isNew ? "bg-primary/5" : ""}`}>
+                      <TableCell className="font-mono text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          {isNew && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shrink-0" />}
+                          {c.id}
                         </div>
-                        <span className="text-[10px] text-muted-foreground">{c.aiScore}%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                        <Calendar size={10} />
-                        {c.date}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="text-xs font-medium text-foreground truncate max-w-[180px]">{c.title}</p>
+                          <p className="text-[10px] text-muted-foreground line-clamp-1">{c.description}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <MapPin size={10} />{c.area || c.ward}
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <div className="flex items-center gap-1 text-xs">
+                          <Building2 size={10} className="text-muted-foreground" />
+                          <Badge variant="outline" className="text-[10px]">{c.department || meta.dept}</Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          {meta.icon} {c.category}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={statusVariant[c.status] ?? "outline"} className="text-[10px]">{c.status}</Badge>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <Badge variant={priorityVariant[c.priority || c.severity] ?? "outline"} className="text-[10px]">
+                          {c.priority || c.severity}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <Calendar size={10} />{c.date || (c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—")}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -361,37 +373,21 @@ export default function Complaints() {
           {/* Pagination */}
           <div className="flex items-center justify-between px-4 py-3 border-t border-border">
             <span className="text-xs text-muted-foreground">
-              {loading
-                ? "Loading…"
-                : `Showing ${Math.min((page - 1) * PAGE_SIZE + 1, total)}–${Math.min(page * PAGE_SIZE, total)} of ${total}`}
+              {loading ? "Loading…" : `Page ${page} of ${totalPages}`}
             </span>
             <div className="flex items-center gap-1">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="p-1.5 rounded hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
+              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
+                className="p-1.5 rounded hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                 <ChevronLeft size={14} />
               </button>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const pg = i + 1;
-                return (
-                  <button
-                    key={pg}
-                    onClick={() => setPage(pg)}
-                    className={`w-7 h-7 text-xs rounded transition-colors ${
-                      page === pg ? "bg-primary text-primary-foreground" : "hover:bg-accent text-muted-foreground"
-                    }`}
-                  >
-                    {pg}
-                  </button>
-                );
-              })}
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="p-1.5 rounded hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + 1).map((pg) => (
+                <button key={pg} onClick={() => setPage(pg)}
+                  className={`w-7 h-7 text-xs rounded transition-colors ${page === pg ? "bg-primary text-primary-foreground" : "hover:bg-accent text-muted-foreground"}`}>
+                  {pg}
+                </button>
+              ))}
+              <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                className="p-1.5 rounded hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                 <ChevronRight size={14} />
               </button>
             </div>

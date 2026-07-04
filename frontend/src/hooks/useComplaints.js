@@ -26,8 +26,8 @@ export function useComplaints() {
 
   const PAGE_SIZE = 10;
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const res = await fetchComplaints({
@@ -152,6 +152,7 @@ export function useComplaints() {
     categories,
     loading,
     error,
+    refreshComplaints: load,
     // Filter state
     search, setSearch,
     statusFilter, setStatusFilter,

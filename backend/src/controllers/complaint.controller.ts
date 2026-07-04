@@ -144,7 +144,10 @@ export class ComplaintController {
       }
 
       res.status(200).json({ message: 'Complaint deleted successfully' });
-    } catch (error) {
+    } catch (error: any) {
+      if (error.message && error.message.includes('Cannot delete a new complaint')) {
+        return res.status(400).json({ error: error.message });
+      }
       next(error);
     }
   }

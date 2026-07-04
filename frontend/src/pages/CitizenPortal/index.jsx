@@ -153,8 +153,8 @@ export default function CitizenPortal() {
       setWard("");
       setImage(null);
       setAudioBlob(null);
-      // Navigate to tracking page after 1.5s so user sees their complaint
-      setTimeout(() => navigate("/citizen/tracking"), 1500);
+      // Navigate to My Reports so user sees their receipt immediately
+      setTimeout(() => navigate("/citizen/my-reports"), 1500);
     } catch (err) {
       console.error(err);
       setErrorMsg(err.message || "An error occurred during submission.");
@@ -213,22 +213,23 @@ export default function CitizenPortal() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Category
                 </label>
                 <select
-                  className="w-full bg-background border border-border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+                  className="w-full bg-background text-foreground border border-border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none appearance-none"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
+                  style={{ colorScheme: "dark" }}
                 >
-                  <option value="Water Supply">Water Supply</option>
-                  <option value="Garbage">Sanitation & Garbage</option>
-                  <option value="Road Damage">Roads & Infrastructure</option>
-                  <option value="Street Lights">Street Lights & Electricity</option>
-                  <option value="Drainage">Drainage & Sewage</option>
-                  <option value="Air Pollution">Air & Environment</option>
-                  <option value="Flood">Flood & Public Safety</option>
-                  <option value="Others">Others</option>
+                  <option value="Water Supply" className="bg-slate-900 text-white">💧 Water Supply</option>
+                  <option value="Garbage" className="bg-slate-900 text-white">🗑️ Sanitation &amp; Garbage</option>
+                  <option value="Road Damage" className="bg-slate-900 text-white">🛣️ Roads &amp; Infrastructure</option>
+                  <option value="Street Lights" className="bg-slate-900 text-white">💡 Street Lights &amp; Electricity</option>
+                  <option value="Drainage" className="bg-slate-900 text-white">🌊 Drainage &amp; Sewage</option>
+                  <option value="Air Pollution" className="bg-slate-900 text-white">🌫️ Air &amp; Environment</option>
+                  <option value="Flood" className="bg-slate-900 text-white">🌧️ Flood &amp; Public Safety</option>
+                  <option value="Others" className="bg-slate-900 text-white">📋 Others</option>
                 </select>
               </div>
               

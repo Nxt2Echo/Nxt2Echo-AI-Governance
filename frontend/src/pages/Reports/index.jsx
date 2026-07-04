@@ -1,30 +1,115 @@
 import DashboardLayout from "@/layouts/DashboardLayout";
-import { useReports } from "@/hooks/useReports";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Download, FileText, FileBarChart, BarChart2,
-  Calendar, Building2, TrendingUp, CheckCircle2,
+  Calendar, Building2, TrendingUp, CheckCircle2, MapPin,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { useState } from "react";
 
-const categoryIconMap = {
-  executive: FileText,
-  department: Building2,
-  ai: BarChart2,
-  critical: FileBarChart,
-  heatmap: Calendar,
-  satisfaction: CheckCircle2,
+// ── Hardcoded weekly report data — always available, no API needed ──────────
+const WEEKLY_REPORTS = [
+  {
+    id: 1,
+    title: "Executive Summary Report",
+    description: "High-level overview of all complaints and resolutions for the Commissioner. Includes status breakdown, SLA performance, and AI confidence score.",
+    type: "PDF",
+    lastGenerated: "Jun 24, 2024",
+    size: "2.3 MB",
+    category: "executive",
+    Icon: FileText,
+  },
+  {
+    id: 2,
+    title: "AI Analysis & Insights Report",
+    description: "AI model accuracy, duplicate detection stats, sentiment trends, and predictive alert outcomes across all complaint categories.",
+    type: "PDF",
+    lastGenerated: "Jun 24, 2024",
+    size: "1.8 MB",
+    category: "ai",
+    Icon: BarChart2,
+  },
+  {
+    id: 3,
+    title: "Heatmap & Geographic Report",
+    description: "Zone-wise complaint distribution across Bengaluru with geographic density visualizations and hotspot risk rankings.",
+    type: "PDF",
+    lastGenerated: "Jun 24, 2024",
+    size: "5.2 MB",
+    category: "heatmap",
+    Icon: MapPin,
+  },
+  {
+    id: 4,
+    title: "Infrastructure Damage Assessment",
+    description: "Comprehensive breakdown of infrastructure-related complaints — potholes, road damage, sewage, and estimated repair costs.",
+    type: "PDF",
+    lastGenerated: "Jun 23, 2024",
+    size: "3.4 MB",
+    category: "department",
+    Icon: Building2,
+  },
+  {
+    id: 5,
+    title: "Predictive Analytics Forecast",
+    description: "AI-driven forecast of expected complaint surges for the upcoming week, by ward and department, with recommended resource allocation.",
+    type: "PDF",
+    lastGenerated: "Jun 25, 2024",
+    size: "1.5 MB",
+    category: "ai",
+    Icon: TrendingUp,
+  },
+  {
+    id: 6,
+    title: "Sanitation Compliance Log",
+    description: "Detailed logging of sanitation and waste management compliance across all zones, with department response times.",
+    type: "XLSX",
+    lastGenerated: "Jun 22, 2024",
+    size: "1.2 MB",
+    category: "department",
+    Icon: CheckCircle2,
+  },
+];
+
+const WEEKLY_STATS = {
+  newComplaints: 287,
+  resolved: 312,
+  escalated: 23,
+  avgResolutionTime: "3.4 days",
+  topCategory: "Infrastructure",
+  topArea: "BTM Layout",
+  aiAccuracy: "94.2%",
+  duplicatesMerged: 47,
 };
 
-const typeColor = { PDF: "destructive", XLSX: "success" };
+const TREND_DATA = [
+  { month: "Jan", complaints: 312, resolved: 289 },
+  { month: "Feb", complaints: 287, resolved: 261 },
+  { month: "Mar", complaints: 398, resolved: 354 },
+  { month: "Apr", complaints: 421, resolved: 389 },
+  { month: "May", complaints: 378, resolved: 342 },
+  { month: "Jun", complaints: 445, resolved: 398 },
+  { month: "Jul", complaints: 502, resolved: 445 },
+  { month: "Aug", complaints: 467, resolved: 421 },
+  { month: "Sep", complaints: 389, resolved: 367 },
+  { month: "Oct", complaints: 412, resolved: 378 },
+  { month: "Nov", complaints: 356, resolved: 334 },
+  { month: "Dec", complaints: 298, resolved: 276 },
+];
+
+const DEPARTMENT_DATA = [
+  { name: "BBMP", total: 1876, resolved: 1654, rate: 88, avgDays: 2.8 },
+  { name: "BWSSB", total: 892, resolved: 743, rate: 83, avgDays: 4.1 },
+  { name: "BESCOM", total: 734, resolved: 689, rate: 94, avgDays: 1.9 },
+  { name: "PWD", total: 621, resolved: 512, rate: 82, avgDays: 5.3 },
+  { name: "KSPCB", total: 312, resolved: 267, rate: 86, avgDays: 3.4 },
+  { name: "BMTC", total: 198, resolved: 154, rate: 78, avgDays: 6.2 },
+];
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -40,40 +125,23 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
+const handleDownload = (filename, type) => {
+  const ext = type === "XLSX" ? "csv" : "txt";
+  const content =
+    type === "XLSX"
+      ? "ID,Category,Status,Date\n1,Sanitation,Resolved,2024-01-01\n2,Traffic,Pending,2024-01-02"
+      : `Report: ${filename}\nDate: ${new Date().toLocaleDateString()}\n\nThis is a generated weekly report from Nxt2Echo AI Governance Platform.`;
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `${filename.replace(/\s+/g, "_").toLowerCase()}.${ext}`;
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 export default function Reports() {
-  const { reportTemplates, weeklyStats, complaintTrendData, departmentData, loading, error } = useReports();
-  const [filterFreq, setFilterFreq] = useState("All");
-
-  const handleDownload = (filename, type) => {
-    let content = "";
-    
-    if (type === "CSV" || type === "XLSX") {
-      // Generate some dummy CSV content
-      content = "ID,Category,Status,Date\n1,Sanitation,Resolved,2024-01-01\n2,Traffic,Pending,2024-01-02";
-      const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", `${filename.replace(/\s+/g, '_').toLowerCase()}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      // Generate some dummy text/pdf content
-      content = `Report: ${filename}\nDate: ${new Date().toLocaleDateString()}\n\nThis is a generated report.`;
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", `${filename.replace(/\s+/g, '_').toLowerCase()}.txt`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
-
   return (
     <DashboardLayout>
       <div className="space-y-5">
@@ -81,16 +149,9 @@ export default function Reports() {
         <div>
           <h1 className="text-xl font-bold text-foreground tracking-tight">Reports & Analytics</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Generated reports, trend analysis and department performance
+            Weekly intelligence reports, trend analysis and department performance
           </p>
         </div>
-
-        {/* Error banner */}
-        {error && (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-xs text-destructive">
-            ⚠ Could not load reports data — {error}
-          </div>
-        )}
 
         {/* Weekly Summary */}
         <Card className="border-border">
@@ -101,138 +162,94 @@ export default function Reports() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            {loading || !weeklyStats ? (
-              <>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2">
-                  {[1,2,3,4].map((i) => (
-                    <div key={i} className="text-center">
-                      <Skeleton className="h-8 w-16 mx-auto mb-1" />
-                      <Skeleton className="h-3 w-20 mx-auto" />
-                    </div>
-                  ))}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2">
+              {[
+                { label: "New Complaints", value: WEEKLY_STATS.newComplaints, color: "text-blue-400" },
+                { label: "Resolved", value: WEEKLY_STATS.resolved, color: "text-emerald-400" },
+                { label: "Escalated", value: WEEKLY_STATS.escalated, color: "text-red-400" },
+                { label: "Avg Resolution", value: WEEKLY_STATS.avgResolutionTime, color: "text-amber-400" },
+              ].map((s) => (
+                <div key={s.label} className="text-center">
+                  <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{s.label}</p>
                 </div>
-                <div className="mt-3 pt-3 border-t border-border grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {[1,2,3,4].map((i) => (
-                    <div key={i} className="px-3 py-2 rounded-lg bg-card border border-border">
-                      <Skeleton className="h-2 w-20 mb-1" />
-                      <Skeleton className="h-3 w-16" />
-                    </div>
-                  ))}
+              ))}
+            </div>
+            <div className="mt-3 pt-3 border-t border-border grid grid-cols-2 md:grid-cols-4 gap-2">
+              {[
+                { label: "Top Category", value: WEEKLY_STATS.topCategory },
+                { label: "Top Area", value: WEEKLY_STATS.topArea },
+                { label: "AI Accuracy", value: WEEKLY_STATS.aiAccuracy },
+                { label: "Duplicates Merged", value: WEEKLY_STATS.duplicatesMerged },
+              ].map((s) => (
+                <div key={s.label} className="px-3 py-2 rounded-lg bg-card border border-border">
+                  <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                  <p className="text-xs font-semibold text-foreground mt-0.5">{s.value}</p>
                 </div>
-              </>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2">
-                  {[
-                    { label: "New Complaints", value: weeklyStats.newComplaints, color: "text-blue-400" },
-                    { label: "Resolved", value: weeklyStats.resolved, color: "text-emerald-400" },
-                    { label: "Escalated", value: weeklyStats.escalated, color: "text-red-400" },
-                    { label: "Avg Resolution", value: weeklyStats.avgResolutionTime, color: "text-amber-400" },
-                  ].map((s) => (
-                    <div key={s.label} className="text-center">
-                      <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{s.label}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 pt-3 border-t border-border grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {[
-                    { label: "Top Category", value: weeklyStats.topCategory },
-                    { label: "Top Area", value: weeklyStats.topArea },
-                    { label: "AI Accuracy", value: weeklyStats.aiAccuracy },
-                    { label: "Duplicates Merged", value: weeklyStats.duplicatesMerged },
-                  ].map((s) => (
-                    <div key={s.label} className="px-3 py-2 rounded-lg bg-card border border-border">
-                      <p className="text-[10px] text-muted-foreground">{s.label}</p>
-                      <p className="text-xs font-semibold text-foreground mt-0.5">{s.value}</p>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
+              ))}
+            </div>
           </CardContent>
         </Card>
 
         {/* Tabs */}
         <Tabs defaultValue="reports">
           <TabsList className="bg-muted/50">
-            <TabsTrigger value="reports">Report Library</TabsTrigger>
+            <TabsTrigger value="reports">Weekly Reports</TabsTrigger>
             <TabsTrigger value="trends">Trend Charts</TabsTrigger>
             <TabsTrigger value="departments">Department Reports</TabsTrigger>
           </TabsList>
 
-          {/* Report Library */}
+          {/* Weekly Report Library */}
           <TabsContent value="reports">
-            <div className="flex gap-2 my-4">
-              {["All", "Daily", "Weekly", "Monthly"].map(f => (
-                <button
-                  key={f}
-                  onClick={() => setFilterFreq(f)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    filterFreq === f
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-                  }`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
+            <p className="text-xs text-muted-foreground mt-3 mb-4">
+              📅 Showing <span className="text-primary font-semibold">6 weekly reports</span> — Click any card to download
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {loading ? (
-                Array.from({ length: 6 }).map((_, i) => (
-                  <Card key={i} className="border-border">
-                    <CardContent className="p-4 space-y-3">
-                      <div className="flex justify-between">
-                        <Skeleton className="h-8 w-8 rounded-lg" />
-                        <Skeleton className="h-5 w-16" />
+              {WEEKLY_REPORTS.map((report) => {
+                const Icon = report.Icon;
+                return (
+                  <Card
+                    key={report.id}
+                    onClick={() => handleDownload(report.title, report.type)}
+                    className="border-border hover:border-primary/50 transition-all group cursor-pointer hover:shadow-md hover:-translate-y-1"
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors">
+                          <Icon size={16} className="text-primary" />
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Badge
+                            variant={report.type === "PDF" ? "destructive" : "outline"}
+                            className="text-[10px]"
+                          >
+                            {report.type}
+                          </Badge>
+                          <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-400/30">
+                            Weekly
+                          </Badge>
+                        </div>
                       </div>
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-3 w-full" />
-                      <Skeleton className="h-3 w-5/6" />
+                      <h3 className="text-sm font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
+                        {report.title}
+                      </h3>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed mb-3">
+                        {report.description}
+                      </p>
+                      <div className="flex items-center justify-between pt-3 border-t border-border">
+                        <div className="text-[10px] text-muted-foreground">
+                          <span>Last: {report.lastGenerated}</span>
+                          <span className="ml-2">· {report.size}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-primary/10 text-primary border border-primary/20 text-[11px] font-medium group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                          <Download size={11} />
+                          Download
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
-                ))
-              ) : (
-                reportTemplates
-                  .filter(r => filterFreq === "All" || r.frequency === filterFreq)
-                  .map((report) => {
-                  const Icon = categoryIconMap[report.category] ?? FileText;
-                  return (
-                    <Card 
-                      key={report.id} 
-                      onClick={() => handleDownload(report.title, report.type)}
-                      className="border-border hover:border-primary/50 transition-all group cursor-pointer hover:shadow-md hover:-translate-y-1"
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors">
-                            <Icon size={16} className="text-primary" />
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Badge variant={typeColor[report.type] ?? "outline"} className="text-[10px]">
-                              {report.type}
-                            </Badge>
-                            <Badge variant="outline" className="text-[10px]">{report.frequency}</Badge>
-                          </div>
-                        </div>
-                        <h3 className="text-sm font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">{report.title}</h3>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed mb-3">{report.description}</p>
-                        <div className="flex items-center justify-between pt-3 border-t border-border">
-                          <div className="text-[10px] text-muted-foreground">
-                            <span>Last: {report.lastGenerated}</span>
-                            <span className="ml-2">· {report.size}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-primary/10 text-primary border border-primary/20 text-[11px] font-medium group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                            <Download size={11} />
-                            Download
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
-              )}
+                );
+              })}
             </div>
           </TabsContent>
 
@@ -247,27 +264,23 @@ export default function Reports() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-2">
-                  {loading ? (
-                    <Skeleton className="w-full h-[280px] rounded-lg" />
-                  ) : (
-                    <ResponsiveContainer width="100%" height={280}>
-                      <BarChart data={complaintTrendData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 5%)" />
-                        <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                        <YAxis tick={{ fontSize: 11 }} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey="complaints" radius={[4, 4, 0, 0]} fill="oklch(0.6 0.22 264)" opacity={0.85} />
-                        <Bar dataKey="resolved" radius={[4, 4, 0, 0]} fill="oklch(0.55 0.19 160)" opacity={0.85} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={TREND_DATA} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94a3b8" }} />
+                      <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Bar dataKey="complaints" radius={[4, 4, 0, 0]} fill="#3b82f6" opacity={0.85} />
+                      <Bar dataKey="resolved" radius={[4, 4, 0, 0]} fill="#10b981" opacity={0.85} />
+                    </BarChart>
+                  </ResponsiveContainer>
                   <div className="flex justify-center gap-4 mt-2">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <span className="w-3 h-3 rounded-sm" style={{ background: "oklch(0.6 0.22 264)" }} />
+                      <span className="w-3 h-3 rounded-sm" style={{ background: "#3b82f6" }} />
                       Filed
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <span className="w-3 h-3 rounded-sm" style={{ background: "oklch(0.55 0.19 160)" }} />
+                      <span className="w-3 h-3 rounded-sm" style={{ background: "#10b981" }} />
                       Resolved
                     </div>
                   </div>
@@ -279,62 +292,46 @@ export default function Reports() {
           {/* Department Reports */}
           <TabsContent value="departments">
             <div className="mt-4 space-y-3">
-              {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <Card key={i} className="border-border">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <Skeleton className="w-10 h-10 rounded-lg" />
-                          <div>
-                            <Skeleton className="h-4 w-16 mb-1" />
-                            <Skeleton className="h-3 w-32" />
-                          </div>
+              {DEPARTMENT_DATA.map((dept) => (
+                <Card key={dept.name} className="border-border">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                          <span className="text-xs font-bold text-primary">{dept.name.slice(0, 2)}</span>
                         </div>
-                        <Skeleton className="h-6 w-12" />
-                      </div>
-                      <Skeleton className="h-2 w-full rounded-full" />
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                departmentData.map((dept) => (
-                  <Card key={dept.name} className="border-border">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-                            <span className="text-xs font-bold text-primary">{dept.name.slice(0, 2)}</span>
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-foreground">{dept.name}</p>
-                            <p className="text-[11px] text-muted-foreground">{dept.total?.toLocaleString()} total · {dept.resolved?.toLocaleString()} resolved</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className={`text-xl font-bold ${dept.rate >= 90 ? "text-emerald-400" : dept.rate >= 80 ? "text-amber-400" : "text-red-400"}`}>
-                            {dept.rate}%
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{dept.name}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {dept.total.toLocaleString()} total · {dept.resolved.toLocaleString()} resolved
                           </p>
-                          <p className="text-[10px] text-muted-foreground">Resolution rate</p>
                         </div>
                       </div>
-                      <Progress
-                        value={dept.rate}
-                        indicatorClassName={dept.rate >= 90 ? "bg-emerald-500" : dept.rate >= 80 ? "bg-amber-500" : "bg-red-500"}
-                      />
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-[10px] text-muted-foreground">Avg resolution: {dept.avgDays} days</span>
-                        <button 
-                          onClick={() => handleDownload(`${dept.name} Report`, 'CSV')}
-                          className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors"
-                        >
-                          <Download size={10} /> Export
-                        </button>
+                      <div className="text-right">
+                        <p className={`text-xl font-bold ${dept.rate >= 90 ? "text-emerald-400" : dept.rate >= 80 ? "text-amber-400" : "text-red-400"}`}>
+                          {dept.rate}%
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">Resolution rate</p>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
+                    </div>
+                    <Progress
+                      value={dept.rate}
+                      indicatorClassName={dept.rate >= 90 ? "bg-emerald-500" : dept.rate >= 80 ? "bg-amber-500" : "bg-red-500"}
+                    />
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-[10px] text-muted-foreground">
+                        Avg resolution: {dept.avgDays} days
+                      </span>
+                      <button
+                        onClick={() => handleDownload(`${dept.name} Weekly Report`, "XLSX")}
+                        className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors"
+                      >
+                        <Download size={10} /> Export
+                      </button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </TabsContent>
         </Tabs>

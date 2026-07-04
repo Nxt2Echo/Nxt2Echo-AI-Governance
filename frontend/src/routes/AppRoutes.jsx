@@ -12,6 +12,7 @@ import Register from "../pages/Auth/Register";
 import ForgotPassword from "../pages/Auth/ForgotPassword";
 import CitizenPortal from "../pages/CitizenPortal/index";
 import CitizenTracking from "../pages/CitizenPortal/Tracking";
+import CitizenMyReports from "../pages/CitizenPortal/MyReports";
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useAuth();
@@ -50,6 +51,7 @@ export default function AppRoutes(){
         {/* Citizen Routes */}
         <Route path="/citizen" element={<ProtectedRoute allowedRoles={["CITIZEN"]}><CitizenPortal/></ProtectedRoute>} />
         <Route path="/citizen/tracking" element={<ProtectedRoute allowedRoles={["CITIZEN"]}><CitizenTracking/></ProtectedRoute>} />
+        <Route path="/citizen/my-reports" element={<ProtectedRoute allowedRoles={["CITIZEN"]}><CitizenMyReports/></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

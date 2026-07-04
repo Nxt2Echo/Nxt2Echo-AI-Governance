@@ -368,10 +368,79 @@ if (useMock) {
 }
 
 // Implement MongoDB-backed Firestore Mock to persist complaints and users
-class MongoCollection {
-  name: string;
+class MongoQuery {
+  collectionName: string;
+  filters: Array<{ field: string; op: string; val: any }> = [];
+  limitVal: number = 0;
+
+  constructor(collectionName: string) {
+    this.collectionName = collectionName;
+  }
+
+  where(field: string, op: string, val: any) {
+    const next = new MongoQuery(this.collectionName);
+    next.filters = [...this.filters, { field, op, val }];
+    next.limitVal = this.limitVal;
+    return next;
+  }
+
+  limit(n: number) {
+    const next = new MongoQuery(this.collectionName);
+    next.filters = [...this.filters];
+    next.limitVal = n;
+    return next;
+  }
+
+  async get() {
+    let list: any[] = [];
+    if (mongoDb) {
+      const selector: Record<string, any> = {};
+      for (const f of this.filters) {
+        if (f.op === '==' || f.op === '===') {
+          selector[f.field] = f.val;
+        } else {
+          selector[f.field] = f.val;
+        }
+      }
+
+      try {
+        const cursor = mongoDb.collection(this.collectionName).find(selector);
+        if (this.limitVal > 0) cursor.limit(this.limitVal);
+        const docs = await cursor.toArray();
+        list = docs.map((doc: any) => {
+          const id = doc._id;
+          const copy = { ...doc };
+          delete copy._id;
+          return new MockDoc(id, copy, true);
+        });
+      } catch (err) {
+        console.error(`MongoDB query failed in collection ${this.collectionName}:`, err);
+      }
+    }
+    
+    if (list.length === 0) {
+      const allDocs = Object.entries(dbStore.dataStore[this.collectionName] || {}).map(
+        ([id, data]) => new MockDoc(id, data, true)
+      );
+      list = allDocs.filter(doc => {
+        const data = doc.data();
+        return this.filters.every(f => data && data[f.field] === f.val);
+      });
+      if (this.limitVal > 0) {
+        list = list.slice(0, this.limitVal);
+      }
+    }
+
+    return {
+      docs: list,
+      empty: list.length === 0
+    };
+  }
+}
+
+class MongoCollection extends MongoQuery {
   constructor(name: string) {
-    this.name = name;
+    super(name);
   }
 
   async add(data: any) {
@@ -387,115 +456,62 @@ class MongoCollection {
       get: async () => {
         let data = null;
         if (mongoDb) {
-          data = await mongoDb.collection(this.name).findOne({ _id: id });
-          if (data) {
-            delete data._id;
+          try {
+            data = await mongoDb.collection(this.collectionName).findOne({ _id: id });
+            if (data) {
+              delete data._id;
+            }
+          } catch (err) {
+            console.error(`MongoDB findOne failed:`, err);
           }
         }
-        // Fallback to memory
         if (!data) {
-          data = dbStore.dataStore[this.name]?.[id];
+          data = dbStore.dataStore[this.collectionName]?.[id];
         }
         return new MockDoc(id, data, !!data);
       },
       set: async (data: any) => {
         if (mongoDb) {
-          await mongoDb.collection(this.name).updateOne(
-            { _id: id },
-            { $set: data },
-            { upsert: true }
-          );
+          try {
+            await mongoDb.collection(this.collectionName).updateOne(
+              { _id: id },
+              { $set: data },
+              { upsert: true }
+            );
+          } catch (err) {
+            console.error(`MongoDB updateOne/upsert failed:`, err);
+          }
         }
-        // Sync memory
-        if (!dbStore.dataStore[this.name]) dbStore.dataStore[this.name] = {};
-        dbStore.dataStore[this.name][id] = { ...data };
+        if (!dbStore.dataStore[this.collectionName]) dbStore.dataStore[this.collectionName] = {};
+        dbStore.dataStore[this.collectionName][id] = { ...data };
       },
       update: async (data: any) => {
         if (mongoDb) {
-          await mongoDb.collection(this.name).updateOne(
-            { _id: id },
-            { $set: data }
-          );
+          try {
+            await mongoDb.collection(this.collectionName).updateOne(
+              { _id: id },
+              { $set: data }
+            );
+          } catch (err) {
+            console.error(`MongoDB updateOne failed:`, err);
+          }
         }
-        // Sync memory
-        if (!dbStore.dataStore[this.name]) dbStore.dataStore[this.name] = {};
-        const current = dbStore.dataStore[this.name][id] || {};
-        dbStore.dataStore[this.name][id] = { ...current, ...data };
+        if (!dbStore.dataStore[this.collectionName]) dbStore.dataStore[this.collectionName] = {};
+        const current = dbStore.dataStore[this.collectionName][id] || {};
+        dbStore.dataStore[this.collectionName][id] = { ...current, ...data };
       },
       delete: async () => {
         if (mongoDb) {
-          await mongoDb.collection(this.name).deleteOne({ _id: id });
+          try {
+            await mongoDb.collection(this.collectionName).deleteOne({ _id: id });
+          } catch (err) {
+            console.error(`MongoDB deleteOne failed:`, err);
+          }
         }
-        if (dbStore.dataStore[this.name]) {
-          delete dbStore.dataStore[this.name][id];
+        if (dbStore.dataStore[this.collectionName]) {
+          delete dbStore.dataStore[this.collectionName][id];
         }
       }
-    };
-  }
-
-  where(field: string, op: string, val: any) {
-    return {
-      limit: (n: number) => {
-        return {
-          get: () => this.whereQuery(field, val, n)
-        };
-      },
-      get: () => this.whereQuery(field, val)
-    };
-  }
-
-  private async whereQuery(field: string, val: any, limitVal = 0) {
-    let list: any[] = [];
-    if (mongoDb) {
-      const cursor = mongoDb.collection(this.name).find({ [field]: val });
-      if (limitVal > 0) cursor.limit(limitVal);
-      const docs = await cursor.toArray();
-      list = docs.map((doc: any) => {
-        const id = doc._id;
-        delete doc._id;
-        return new MockDoc(id, doc, true);
-      });
-    }
-    
-    if (list.length === 0) {
-      const allDocs = Object.entries(dbStore.dataStore[this.name] || {}).map(
-        ([id, data]) => new MockDoc(id, data, true)
-      );
-      list = allDocs.filter(doc => {
-        const data = doc.data();
-        return data && data[field] === val;
-      });
-      if (limitVal > 0) {
-        list = list.slice(0, limitVal);
-      }
-    }
-
-    return {
-      docs: list,
-      empty: list.length === 0
-    };
-  }
-
-  async get() {
-    let list: any[] = [];
-    if (mongoDb) {
-      const docs = await mongoDb.collection(this.name).find({}).toArray();
-      list = docs.map((doc: any) => {
-        const id = doc._id;
-        delete doc._id;
-        return new MockDoc(id, doc, true);
-      });
-    }
-    
-    if (list.length === 0) {
-      list = Object.entries(dbStore.dataStore[this.name] || {}).map(
-        ([id, data]) => new MockDoc(id, data, true)
-      );
-    }
-
-    return {
-      docs: list,
-      empty: list.length === 0
     };
   }
 }

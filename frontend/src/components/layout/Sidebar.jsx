@@ -27,6 +27,7 @@ const officerMenuItems = [
 const citizenMenuItems = [
   { name: "Create Complaint", path: "/citizen", icon: FileText },
   { name: "Track Complaints", path: "/citizen/tracking", icon: Map },
+  { name: "My Reports", path: "/reports", icon: BarChart3 },
   { name: "Settings", path: "/settings", icon: Settings },
 ];
 

@@ -52,23 +52,23 @@ export default function ComplaintTrend() {
             <AreaChart data={trendData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="complaints-gradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="oklch(0.6 0.22 264)" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="oklch(0.6 0.22 264)" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="resolved-gradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="oklch(0.55 0.19 160)" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="oklch(0.55 0.19 160)" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 5%)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
               <XAxis
                 dataKey="month"
-                tick={{ fontSize: 10, fill: "oklch(0.62 0.03 264)" }}
+                tick={{ fontSize: 10, fill: "#94a3b8" }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fontSize: 10, fill: "oklch(0.62 0.03 264)" }}
+                tick={{ fontSize: 10, fill: "#94a3b8" }}
                 axisLine={false}
                 tickLine={false}
               />
@@ -76,7 +76,7 @@ export default function ComplaintTrend() {
               <Area
                 type="monotone"
                 dataKey="complaints"
-                stroke="oklch(0.6 0.22 264)"
+                stroke="#3b82f6"
                 strokeWidth={2}
                 fill="url(#complaints-gradient)"
                 dot={false}
@@ -85,7 +85,7 @@ export default function ComplaintTrend() {
               <Area
                 type="monotone"
                 dataKey="resolved"
-                stroke="oklch(0.55 0.19 160)"
+                stroke="#10b981"
                 strokeWidth={2}
                 fill="url(#resolved-gradient)"
                 dot={false}
@@ -96,11 +96,11 @@ export default function ComplaintTrend() {
         )}
         <div className="flex items-center gap-4 mt-2 justify-center">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "oklch(0.6 0.22 264)" }} />
+            <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#3b82f6" }} />
             <span className="text-xs text-muted-foreground">Filed</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "oklch(0.55 0.19 160)" }} />
+            <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#10b981" }} />
             <span className="text-xs text-muted-foreground">Resolved</span>
           </div>
         </div>

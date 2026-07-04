@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 
+const CITIZEN_ROLE = "CITIZEN";
+
 const pageTitles = {
   "/": { title: "Dashboard", sub: "AI Governance Intelligence Overview" },
   "/complaints": { title: "Complaints", sub: "Manage and track citizen complaints" },
@@ -66,33 +68,35 @@ export default function Navbar({ onMenuClick }) {
           <span className="text-xs font-medium text-emerald-400 md:hidden">AI</span>
         </div>
 
-        {/* Alert Badge */}
-        <div className="relative">
-          <button
-            onClick={() => { setShowAlerts(!showAlerts); setShowNotifications(false); setShowProfileMenu(false); }}
-            className="relative p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-          >
-            <AlertCircle size={16} />
-            <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full" />
-          </button>
+        {/* Alert Badge — Gov users only */}
+        {user?.role !== CITIZEN_ROLE && (
+          <div className="relative">
+            <button
+              onClick={() => { setShowAlerts(!showAlerts); setShowNotifications(false); setShowProfileMenu(false); }}
+              className="relative p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+            >
+              <AlertCircle size={16} />
+              <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full" />
+            </button>
 
-          {showAlerts && (
-            <div className="absolute right-0 mt-2 w-64 md:w-72 bg-card border border-border rounded-lg shadow-lg z-50 p-2">
-              <div className="flex items-center gap-2 px-2 py-1 border-b border-border mb-1 text-red-500">
-                <AlertCircle size={14} />
-                <span className="text-xs font-semibold">Critical Alerts</span>
+            {showAlerts && (
+              <div className="absolute right-0 mt-2 w-64 md:w-72 bg-card border border-border rounded-lg shadow-lg z-50 p-2">
+                <div className="flex items-center gap-2 px-2 py-1 border-b border-border mb-1 text-red-500">
+                  <AlertCircle size={14} />
+                  <span className="text-xs font-semibold">Critical Alerts</span>
+                </div>
+                <div className="px-2 py-2 text-xs text-muted-foreground hover:bg-accent rounded cursor-pointer border-l-2 border-red-500 mb-1">
+                  <span className="font-medium text-foreground block">System Anomaly Detected</span>
+                  Unusual spike in complaints from East Zone.
+                </div>
+                <div className="px-2 py-2 text-xs text-muted-foreground hover:bg-accent rounded cursor-pointer border-l-2 border-orange-500">
+                  <span className="font-medium text-foreground block">API Rate Limit Warning</span>
+                  Geocoding API usage at 92% of daily quota.
+                </div>
               </div>
-              <div className="px-2 py-2 text-xs text-muted-foreground hover:bg-accent rounded cursor-pointer border-l-2 border-red-500 mb-1">
-                <span className="font-medium text-foreground block">System Anomaly Detected</span>
-                Unusual spike in complaints from East Zone.
-              </div>
-              <div className="px-2 py-2 text-xs text-muted-foreground hover:bg-accent rounded cursor-pointer border-l-2 border-orange-500">
-                <span className="font-medium text-foreground block">API Rate Limit Warning</span>
-                Geocoding API usage at 92% of daily quota.
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* Info Icon */}
         <button
@@ -102,28 +106,30 @@ export default function Navbar({ onMenuClick }) {
           <Info size={16} />
         </button>
 
-        {/* Notifications */}
-        <div className="relative">
-          <button
-            onClick={() => { setShowNotifications(!showNotifications); setShowAlerts(false); setShowProfileMenu(false); }}
-            className="relative p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-          >
-            <Bell size={16} />
-            <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-primary rounded-full" />
-          </button>
+        {/* Notifications Bell — Gov users only */}
+        {user?.role !== CITIZEN_ROLE && (
+          <div className="relative">
+            <button
+              onClick={() => { setShowNotifications(!showNotifications); setShowAlerts(false); setShowProfileMenu(false); }}
+              className="relative p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+            >
+              <Bell size={16} />
+              <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-primary rounded-full" />
+            </button>
 
-          {showNotifications && (
-            <div className="absolute right-0 mt-2 w-64 bg-card border border-border rounded-lg shadow-lg z-50 p-2">
-              <div className="text-xs font-semibold text-foreground px-2 py-1 border-b border-border mb-1">Notifications</div>
-              <div className="px-2 py-2 text-xs text-muted-foreground hover:bg-accent rounded cursor-pointer">
-                New high risk complaint registered in Zone A.
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-64 bg-card border border-border rounded-lg shadow-lg z-50 p-2">
+                <div className="text-xs font-semibold text-foreground px-2 py-1 border-b border-border mb-1">Notifications</div>
+                <div className="px-2 py-2 text-xs text-muted-foreground hover:bg-accent rounded cursor-pointer">
+                  New high risk complaint registered in Zone A.
+                </div>
+                <div className="px-2 py-2 text-xs text-muted-foreground hover:bg-accent rounded cursor-pointer">
+                  AI Engine completed weekly batch analysis.
+                </div>
               </div>
-              <div className="px-2 py-2 text-xs text-muted-foreground hover:bg-accent rounded cursor-pointer">
-                AI Engine completed weekly batch analysis.
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* Divider */}
         <div className="w-px h-5 bg-border mx-0.5 hidden sm:block" />
