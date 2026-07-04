@@ -435,7 +435,11 @@ class MongoCollection {
 
   where(field: string, op: string, val: any) {
     return {
-      limit: (n: number) => this.whereQuery(field, val, n),
+      limit: (n: number) => {
+        return {
+          get: () => this.whereQuery(field, val, n)
+        };
+      },
       get: () => this.whereQuery(field, val)
     };
   }
