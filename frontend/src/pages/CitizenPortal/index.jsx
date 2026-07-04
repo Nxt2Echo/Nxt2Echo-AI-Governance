@@ -1,12 +1,26 @@
 import { useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { auth } from "../../lib/firebase";
 import { Mic, Camera, Send, StopCircle, CheckCircle2, User, FileText, AlertCircle } from "lucide-react";
 import DashboardLayout from "@/layouts/DashboardLayout";
 
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+const STORAGE_KEY = "nxt2echo_my_complaints";
+
+function saveComplaintLocally(complaint) {
+  try {
+    const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    // Prepend newest first, keep last 50
+    const updated = [complaint, ...existing].slice(0, 50);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  } catch {}
+}
+
 export default function CitizenPortal() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [description, setDescription] = useState("");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Others");
@@ -84,12 +98,17 @@ export default function CitizenPortal() {
         formData.append("voice", audioBlob, "voice-recording.webm");
       }
 
-      const token = await auth.currentUser?.getIdToken();
-      const response = await fetch("http://localhost:5000/api/complaints", {
+      // Get auth token (JWT from backend login, or mock Firebase token)
+      let token = null;
+      try {
+        const stored = localStorage.getItem('nxt2echo_user');
+        if (stored) token = JSON.parse(stored).token;
+      } catch {}
+      if (!token && auth.currentUser) token = await auth.currentUser.getIdToken();
+
+      const response = await fetch(`${BASE_URL}/complaints`, {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        },
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
         body: formData
       });
 
@@ -97,25 +116,34 @@ export default function CitizenPortal() {
         let errStr = "Failed to submit complaint";
         try {
           const errData = await response.json();
-          console.error("Backend Error Response:", errData);
-          if (errData.error) {
-            if (typeof errData.error === 'string') {
-               errStr = errData.error;
-            } else if (errData.error.message) {
-               errStr = errData.error.message;
-            } else {
-               errStr = JSON.stringify(errData.error);
-            }
-          } else if (errData.errors && Array.isArray(errData.errors) && errData.errors.length > 0) {
-            errStr = errData.errors.map(e => e.msg || JSON.stringify(e)).join(", ");
-          } else {
-            errStr = JSON.stringify(errData);
-          }
-        } catch(e) {
-          console.error("Error parsing backend response:", e);
-        }
+          if (errData.error) errStr = typeof errData.error === 'string' ? errData.error : (errData.error.message || JSON.stringify(errData.error));
+          else if (errData.errors?.length) errStr = errData.errors.map(e => e.msg || JSON.stringify(e)).join(", ");
+          else errStr = JSON.stringify(errData);
+        } catch {}
         throw new Error(errStr);
       }
+
+      const result = await response.json();
+      const submittedComplaint = result.data || {};
+
+      // ✅ Save to localStorage immediately for real-time tracking
+      const localComplaint = {
+        id: submittedComplaint.id || `local-${Date.now()}`,
+        title: title || description.substring(0, 60) + (description.length > 60 ? "..." : ""),
+        description,
+        category,
+        severity,
+        ward,
+        address,
+        status: "Pending",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        userId: user?.id || user?.uid || "local",
+        department: { Infrastructure: "PWD", WaterSupply: "BWSSB", Sanitation: "BBMP", Electricity: "BESCOM", PublicSafety: "BBMP", Drainage: "BBMP" }[category] || "BBMP",
+        ...submittedComplaint,
+        _local: true,
+      };
+      saveComplaintLocally(localComplaint);
 
       setStatus("success");
       // Reset form
@@ -125,7 +153,8 @@ export default function CitizenPortal() {
       setWard("");
       setImage(null);
       setAudioBlob(null);
-      setTimeout(() => setStatus("idle"), 3000);
+      // Navigate to tracking page after 1.5s so user sees their complaint
+      setTimeout(() => navigate("/citizen/tracking"), 1500);
     } catch (err) {
       console.error(err);
       setErrorMsg(err.message || "An error occurred during submission.");
