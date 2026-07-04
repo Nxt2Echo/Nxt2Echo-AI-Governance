@@ -1,7 +1,8 @@
 import app from './app';
 import { env } from './config/env';
 
-const startServer = () => {
+// In Vercel, we must not call listen directly as Vercel runs the app serverless
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
   try {
     app.listen(env.PORT, () => {
       console.log(`[Server]: API is running on http://localhost:${env.PORT}`);
@@ -11,6 +12,7 @@ const startServer = () => {
     console.error('Error starting server:', error);
     process.exit(1);
   }
-};
+}
 
-startServer();
+export default app;
+

@@ -23,7 +23,22 @@ const app = express();
 
 // Security Middlewares
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    // Allow all vercel.app domains + localhost
+    if (
+      origin.endsWith('.vercel.app') ||
+      origin.startsWith('http://localhost') ||
+      origin.startsWith('http://192.168.')
+    ) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 
 // Logging Middleware
 app.use(morgan('dev'));

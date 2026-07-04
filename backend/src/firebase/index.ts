@@ -149,10 +149,19 @@ class MockDb {
   constructor() {
     this.dataStore = {
       users: {
+        "mock-uid-admin": {
+          email: "admin@nxt2echo.com",
+          name: "Admin User",
+          role: "ADMIN",
+          password: "$2a$10$azrSWoZIj4.t8OiI7wahd.XrDHN7teena1OvNTGBitTqQGwqHm9d2", // Admin@123
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
         "mock-uid-officer": {
           email: "officer@example.com",
           name: "Gov Officer",
           role: "OFFICER",
+          password: "$2a$10$w1w2qDG4Xn9tHA54Li/tiOBeilq5xJAnM15.VfyTMDHmk0uh4laty", // Officer@123
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
@@ -160,6 +169,7 @@ class MockDb {
           email: "citizen@example.com",
           name: "Mock Citizen",
           role: "CITIZEN",
+          password: "$2a$10$o3ptG6lB2QJAAkRhjYLGeOEtq41PsfVPdGxuTlhXKXJmrrLvj1UyC", // Citizen@123
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         }
@@ -167,6 +177,7 @@ class MockDb {
       complaints: {}
     };
   }
+
 
   collection(name: string) {
     return new MockCollection(name, this);

@@ -1,12 +1,12 @@
 import { storage } from '../firebase';
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 
 export class StorageService {
   static async uploadFile(fileBuffer: Buffer, mimetype: string, folder: string): Promise<string> {
     try {
       const bucket = storage.bucket();
       const extension = mimetype.split('/')[1] || 'bin';
-      const filename = `${folder}/${uuidv4()}.${extension}`;
+      const filename = `${folder}/${crypto.randomUUID()}.${extension}`;
       const file = bucket.file(filename);
 
       await file.save(fileBuffer, {
@@ -38,3 +38,4 @@ export class StorageService {
     return this.uploadFile(fileBuffer, mimetype, 'voices');
   }
 }
+
