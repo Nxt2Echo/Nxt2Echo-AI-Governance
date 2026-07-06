@@ -1,0 +1,83 @@
+{
+  "info": {
+    "name": "Nxt2Echo API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"John Doe\",\n  \"role\": \"Citizen\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"uid\": \"FIREBASE_UID_HERE\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Complaints",
+      "item": [
+        {
+          "name": "Create Complaint",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/complaints", "host": ["{{baseUrl}}"], "path": ["api", "complaints"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Pothole on Main St", "type": "text" },
+                { "key": "description", "value": "Large pothole causing traffic issues.", "type": "text" },
+                { "key": "category", "value": "Road Damage", "type": "text" },
+                { "key": "severity", "value": "High", "type": "text" },
+                { "key": "latitude", "value": "12.9715987", "type": "text" },
+                { "key": "longitude", "value": "77.5945627", "type": "text" },
+                { "key": "ward", "value": "Ward 5", "type": "text" },
+                { "key": "address", "value": "123 Main St", "type": "text" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Complaints",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/complaints", "host": ["{{baseUrl}}"], "path": ["api", "complaints"] }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000", "type": "string" },
+    { "key": "token", "value": "YOUR_JWT_TOKEN", "type": "string" }
+  ]
+}
