@@ -17,7 +17,6 @@ Actionable Governance Intelligence.
 ![GitHub Forks](https://img.shields.io/github/forks/Nxt2Echo/Nxt2Echo---AI--Governance?style=for-the-badge)
 ![GitHub Issues](https://img.shields.io/github/issues/Nxt2Echo/Nxt2Echo---AI--Governance?style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/Nxt2Echo/Nxt2Echo---AI--Governance?style=for-the-badge)
-
 <br><br>
 
 ![Frontend](https://img.shields.io/badge/Frontend-React-61DAFB?style=for-the-badge&logo=react&logoColor=white)
