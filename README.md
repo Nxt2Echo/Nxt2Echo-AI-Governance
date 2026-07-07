@@ -15,12 +15,14 @@ Actionable Governance Intelligence.
 
 ![Forks](https://img.shields.io/github/forks/Nxt2Echo/Nxt2Echo---AI--Governance?style=for-the-badge)
 
+![Issues](https://img.shields.io/github/Issues/Nxt2Echo/Nxt2Echo---AI--Governance?style=for-the-badge)
+
 ![License](https://img.shields.io/github/license/Nxt2Echo/Nxt2Echo---AI--Governance?style=for-the-badge)
 
-![React]
+![React](https://img.shields.io/github/React/Nxt2Echo/Nxt2Echo---AI--Governance?style=for-the-badge)
 
-![Node]
+![Node](https://img.shields.io/github/Node/Nxt2Echo/Nxt2Echo---AI--Governance?style=for-the-badge)
 
-![Express]
+![Express](https://img.shields.io/github/Express/Nxt2Echo/Nxt2Echo---AI--Governance?style=for-the-badge)
 
-![Gemini]
+![Gemini](https://img.shields.io/github/Gemini/Nxt2Echo/Nxt2Echo---AI--Governance?style=for-the-badge)
