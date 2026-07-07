@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/cover.png" width="100%">
+  <img src="docs/cover.png" width="80%">
 </p>
 
 <h1 align="center">
