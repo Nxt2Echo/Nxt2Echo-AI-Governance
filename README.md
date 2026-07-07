@@ -382,4 +382,333 @@ The platform consists of multiple modules that work together to provide a comple
 |----------|----------|
 | ![](docs/reports.png) | ![](docs/settings.png) |
 
+| User Complaints | Login Interface |
+|----------|----------|
+| ![](docs/user-register.png) | ![](docs/login.png) |
+
+---
+
+# 🛠️ Technology Stack
+
+| Category | Technologies |
+|-----------|--------------|
+|  Frontend | React.js, Vite, Tailwind CSS, ShadCN UI, React Router DOM |
+|  Backend | Node.js, Express.js, TypeScript |
+|  Artificial Intelligence | Google Gemini API |
+|  Database | SQLite |
+|  Authentication | JWT, Firebase Authentication |
+|  API Documentation | Swagger (OpenAPI) |
+|  API Testing | Postman |
+|  Development Tools | VS Code, Git, GitHub |
+|  Deployment | Vercel (Frontend & Backend Ready) |
+
+---
+
+# 🚀 Getting Started
+
+Follow the steps below to run the project locally.
+
+## 1️⃣ Clone Repository
+
+```bash
+git clone https://github.com/Nxt2Echo/Nxt2Echo---AI--Governance.git
+
+cd Nxt2Echo---AI--Governance
+```
+
+---
+
+## 2️⃣ Install Frontend Dependencies
+
+```bash
+cd frontend
+
+npm install
+```
+
+---
+
+## 3️⃣ Install Backend Dependencies
+
+```bash
+cd backend
+
+npm install
+```
+
+---
+
+## 4️⃣ Configure Environment Variables
+
+Create a `.env` file inside the backend directory.
+
+Example:
+
+```env
+PORT=5000
+
+JWT_SECRET=your_secret_key
+
+DATABASE_URL=database.sqlite
+
+GEMINI_API_KEY=your_google_gemini_api_key
+```
+
+---
+
+## 5️⃣ Start Backend
+
+```bash
+cd backend
+
+npm run dev
+```
+
+Backend runs at:
+
+```
+http://localhost:5000
+```
+
+---
+
+## 6️⃣ Start Frontend
+
+```bash
+cd frontend
+
+npm run dev
+```
+
+Frontend runs at:
+
+```
+http://localhost:5173
+```
+
+---
+
+# ⚙️ Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| PORT | Backend server port |
+| JWT_SECRET | Secret key for JWT Authentication |
+| DATABASE_URL | SQLite database path |
+| GEMINI_API_KEY | Google Gemini API Key |
+| FIREBASE_PROJECT_ID | Firebase Project ID |
+| FIREBASE_CLIENT_EMAIL | Firebase Admin Client Email |
+| FIREBASE_PRIVATE_KEY | Firebase Admin Private Key |
+| VITE_FIREBASE_API_KEY | Frontend Firebase API Key |
+| VITE_FIREBASE_AUTH_DOMAIN | Firebase Authentication Domain |
+| VITE_FIREBASE_STORAGE_BUCKET | Firebase Storage Bucket |
+| VITE_FIREBASE_MESSAGING_SENDER_ID | Firebase Messaging Sender ID |
+| VITE_FIREBASE_APP_ID | Firebase Application ID |
+
+---
+
+# 📡 REST API Overview
+
+The backend exposes a secure RESTful API that powers all frontend operations. APIs are organized into dedicated modules for authentication, complaint management, analytics, reporting, AI services, and system health monitoring.
+
+## Authentication
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | Register a new user |
+| POST | `/api/auth/login` | User authentication |
+| POST | `/api/auth/send-otp` | Send OTP |
+| POST | `/api/auth/verify-otp` | Verify OTP |
+| POST | `/api/auth/forgot-password` | Forgot Password |
+| POST | `/api/auth/reset-password` | Reset Password |
+
+---
+
+## Complaints
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/complaints` |
+| GET | `/api/complaints/:id` |
+| POST | `/api/complaints` |
+| PUT | `/api/complaints/:id` |
+| DELETE | `/api/complaints/:id` |
+
+---
+
+## Analytics
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/analytics/complaint-trend` |
+| GET | `/api/analytics/categories` |
+| GET | `/api/analytics/departments` |
+| GET | `/api/analytics/sentiment` |
+
+---
+
+## AI
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/ai/insights` |
+| POST | `/api/gemini/chat` |
+
+---
+
+## Reports
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/reports` |
+| GET | `/api/reports/stats/weekly` |
+
+---
+
+## Health
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/health` |
+
+---
+
+# 📖 API Documentation
+
+Interactive API documentation is available through **Swagger UI**.
+
+```
+http://localhost:5000/api-docs
+```
+
+Swagger provides:
+
+- Interactive API testing
+- Request & Response examples
+- Authentication support
+- Endpoint documentation
+
+  ---
+
+# 🔒 Security
+
+Security has been considered throughout the application architecture.
+
+- JWT Authentication
+- Protected API Routes
+- Role-Based Access Control
+- Secure Password Handling
+- Environment Variable Protection
+- API Authorization
+- Input Validation
+- HTTPS Ready Architecture
+
+  ---
+
+# 🚀 Deployment
+
+The application is designed for cloud deployment.
+
+### Frontend
+
+- Vercel
+- Netlify
+
+### Backend
+
+- Render
+- Railway
+- Vercel Functions
+- Node.js Server
+
+Before deployment ensure:
+
+- Environment Variables are configured
+- API URLs are updated
+- Gemini API Key is available
+- Database configuration is correct
+
+  ---
+
+# 🛣️ Future Roadmap
+
+The platform is designed to evolve beyond the hackathon prototype.
+
+### Planned Enhancements
+
+- 🌍 Multilingual Complaint Processing
+- 🎤 Voice-Based Complaint Submission
+- 📷 Image-Based Issue Detection
+- 🤖 AI Chat Assistant
+- 📱 Android & iOS Mobile Application
+- 🔔 WhatsApp & SMS Notifications
+- 📊 Predictive Governance Analytics
+- ☁️ Cloud-Native Deployment
+- 🌐 GIS-Based Advanced Heatmaps
+- 📈 Performance Monitoring Dashboard
+
+  ---
+
+---
+
+# 👥 Meet the Team
+
+<table>
+<tr>
+
+<td align="center">
+<a href="https://github.com/USERNAME4">
+<img src="https://github.com/USERNAME4.png" width="100px;" alt="Mrunal"/><br>
+<b>Mrunal Pimpale</b>
+</a><br>
+Frontend
+</td>
+
+<td align="center">
+<a href="https://github.com/USERNAME3">
+<img src="https://github.com/USERNAME3.png" width="100px;" alt="Soham"/><br>
+<b>Soham Sonawane</b>
+</a><br>
+Database
+</td>
+
+<td align="center">
+<a href="https://github.com/USERNAME1">
+<img src="https://github.com/USERNAME1.png" width="100px;" alt="Kaushal"/><br>
+<b>Kaushal Thakare</b>
+</a><br>
+Backend
+</td>
+
+<td align="center">
+<a href="https://github.com/USERNAME2">
+<img src="https://github.com/USERNAME2.png" width="100px;" alt="Sharan"/><br>
+<b>Sharan Gounder</b>
+</a><br>
+AI
+</td>
+</table>
+
+---
+
+# 📜 License
+
+This project is licensed under the **MIT License**.
+
+See the LICENSE file for more details.
+
+---
+
+<div align="center">
+
+## ⭐ If you found this project useful, consider giving it a Star!
+
+Thank you for visiting the Nxt2Echo repository.
+
+Built using **React**, **Node.js**, **Google Gemini AI**, and **Modern Web Technologies**.
+
+© 2026 Team Nxt2Echo • Google Hackathon Project
+
+</div>
+
 
