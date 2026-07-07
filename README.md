@@ -399,7 +399,7 @@ The platform consists of multiple modules that work together to provide a comple
 |  Authentication | JWT, Firebase Authentication |
 |  API Documentation | Swagger (OpenAPI) |
 |  API Testing | Postman |
-|  Development Tools | VS Code, Git, GitHub |
+|  Development Tools | VS Code, Git, GitHub, Antigravity |
 |  Deployment | Vercel (Frontend & Backend Ready) |
 
 ---
