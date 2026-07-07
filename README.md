@@ -6,5 +6,6 @@ Nxt2Echo
   <img src="docs/cover.png" width="40%">
 </p>
 
-
+Transforming Citizen Voices into
+Actionable Governance Intelligence.
 
