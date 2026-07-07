@@ -657,35 +657,31 @@ The platform is designed to evolve beyond the hackathon prototype.
 <tr>
 
 <td align="center">
-<a href="https://github.com/USERNAME4">
-<img src="https://github.com/USERNAME4.png" width="100px;" alt="Mrunal"/><br>
+<a href="https://github.com/Mrunal-dev05">
+<img src="https://github.com/Mrunal-dev05.png" width="100px;" alt="Mrunal"/><br>
 <b>Mrunal Pimpale</b>
-</a><br>
-Frontend
+</a>
 </td>
 
 <td align="center">
-<a href="https://github.com/USERNAME3">
-<img src="https://github.com/USERNAME3.png" width="100px;" alt="Soham"/><br>
+<a href="https://github.com/ssoham242-ruler">
+<img src="https://github.com/ssoham242-ruler.png" width="100px;" alt="Soham"/><br>
 <b>Soham Sonawane</b>
-</a><br>
-Database
+</a>
 </td>
 
 <td align="center">
-<a href="https://github.com/USERNAME1">
-<img src="https://github.com/USERNAME1.png" width="100px;" alt="Kaushal"/><br>
+<a href="https://github.com/Alpha5635">
+<img src="https://github.com/Alpha5635.png" width="100px;" alt="Kaushal"/><br>
 <b>Kaushal Thakare</b>
-</a><br>
-Backend
+</a>
 </td>
 
 <td align="center">
-<a href="https://github.com/USERNAME2">
-<img src="https://github.com/USERNAME2.png" width="100px;" alt="Sharan"/><br>
+<a href="https://github.com/Sharan-iodev">
+<img src="https://github.com/Sharan-iodev.png" width="100px;" alt="Sharan"/><br>
 <b>Sharan Gounder</b>
-</a><br>
-AI
+</a>
 </td>
 </table>
 
